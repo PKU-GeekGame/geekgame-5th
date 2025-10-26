@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "hono/jsx"
+  },
+  "imports": {
+    "@babel/parser": "npm:@babel/parser@^7.28.4",
+    "@babel/traverse": "npm:@babel/traverse@^7.28.4",
+    "hono": "npm:hono@^4.9.10"
+  }
+}

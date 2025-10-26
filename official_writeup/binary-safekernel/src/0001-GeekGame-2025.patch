@@ -1,0 +1,1831 @@
+From c7a31a7d043fd0e98c61f4337d4c2b9efea2f6ac Mon Sep 17 00:00:00 2001
+From: Ruihan Li <lrh2000@pku.edu.cn>
+Date: Sun, 5 Oct 2025 22:33:47 +0800
+Subject: [PATCH] GeekGame 2025
+
+ * Base commit: 257b0c63b1f039e1ec4fd94c2c7bd549f8db2830
+ * Build with (inside the official Docker):
+	make BOOT_PROTOCOL=linux-legacy32 RELEASE=1
+---
+ kernel/src/fs/devpts/mod.rs                   |   9 +-
+ kernel/src/fs/devpts/ptmx.rs                  |   9 +-
+ kernel/src/fs/devpts/slave.rs                 |   9 +-
+ kernel/src/fs/exfat/inode.rs                  |   9 +-
+ kernel/src/fs/ext2/impl_for_vfs/inode.rs      |  15 +-
+ kernel/src/fs/ext2/inode.rs                   |   8 +-
+ kernel/src/fs/inode_handle/dyn_cap.rs         |   9 +-
+ kernel/src/fs/overlayfs/fs.rs                 |  20 +-
+ kernel/src/fs/path/dentry.rs                  |   6 +-
+ kernel/src/fs/path/mod.rs                     | 132 ++++++++++---
+ kernel/src/fs/procfs/template/dir.rs          |   6 +-
+ kernel/src/fs/procfs/template/file.rs         |   6 +-
+ kernel/src/fs/procfs/template/mod.rs          |   9 +-
+ kernel/src/fs/procfs/template/sym.rs          |   6 +-
+ kernel/src/fs/ramfs/fs.rs                     |  72 ++++---
+ kernel/src/fs/utils/inode.rs                  | 119 +----------
+ kernel/src/fs/utils/mod.rs                    |   4 +-
+ kernel/src/fs/utils/permission.rs             | 184 ++++++++++++++++++
+ kernel/src/fs/utils/systree_inode.rs          |  12 +-
+ kernel/src/net/socket/unix/ns/path.rs         |  11 +-
+ .../src/process/credentials/credentials_.rs   | 149 ++++++--------
+ kernel/src/process/credentials/static_cap.rs  |  40 ++--
+ kernel/src/process/credentials/user.rs        |   8 +-
+ kernel/src/process/program_loader/mod.rs      |   8 +-
+ kernel/src/syscall/access.rs                  |  18 +-
+ kernel/src/syscall/setgid.rs                  |   2 +-
+ kernel/src/syscall/setuid.rs                  |   2 +-
+ kernel/src/syscall/utimens.rs                 |   6 +-
+ 28 files changed, 516 insertions(+), 372 deletions(-)
+ create mode 100644 kernel/src/fs/utils/permission.rs
+
+diff --git a/kernel/src/fs/devpts/mod.rs b/kernel/src/fs/devpts/mod.rs
+index b2f77058b..1b99575c4 100644
+--- a/kernel/src/fs/devpts/mod.rs
++++ b/kernel/src/fs/devpts/mod.rs
+@@ -224,24 +224,27 @@ impl Inode for RootInode {
+         self.metadata.read().atime
+     }
+ 
+-    fn set_atime(&self, time: Duration) {
++    fn set_atime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().atime = time;
++        Ok(())
+     }
+ 
+     fn mtime(&self) -> Duration {
+         self.metadata.read().mtime
+     }
+ 
+-    fn set_mtime(&self, time: Duration) {
++    fn set_mtime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().mtime = time;
++        Ok(())
+     }
+ 
+     fn ctime(&self) -> Duration {
+         self.metadata.read().ctime
+     }
+ 
+-    fn set_ctime(&self, time: Duration) {
++    fn set_ctime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().ctime = time;
++        Ok(())
+     }
+ 
+     fn create(&self, name: &str, type_: InodeType, mode: InodeMode) -> Result<Arc<dyn Inode>> {
+diff --git a/kernel/src/fs/devpts/ptmx.rs b/kernel/src/fs/devpts/ptmx.rs
+index 4d29d21a3..2e8c13afc 100644
+--- a/kernel/src/fs/devpts/ptmx.rs
++++ b/kernel/src/fs/devpts/ptmx.rs
+@@ -116,24 +116,27 @@ impl Inode for Ptmx {
+         self.metadata.read().atime
+     }
+ 
+-    fn set_atime(&self, time: Duration) {
++    fn set_atime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().atime = time;
++        Ok(())
+     }
+ 
+     fn mtime(&self) -> Duration {
+         self.metadata.read().mtime
+     }
+ 
+-    fn set_mtime(&self, time: Duration) {
++    fn set_mtime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().mtime = time;
++        Ok(())
+     }
+ 
+     fn ctime(&self) -> Duration {
+         self.metadata.read().ctime
+     }
+ 
+-    fn set_ctime(&self, time: Duration) {
++    fn set_ctime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().ctime = time;
++        Ok(())
+     }
+ 
+     fn read_at(&self, offset: usize, writer: &mut VmWriter) -> Result<usize> {
+diff --git a/kernel/src/fs/devpts/slave.rs b/kernel/src/fs/devpts/slave.rs
+index 0fe51a971..a0903d17d 100644
+--- a/kernel/src/fs/devpts/slave.rs
++++ b/kernel/src/fs/devpts/slave.rs
+@@ -96,24 +96,27 @@ impl Inode for PtySlaveInode {
+         self.metadata.read().atime
+     }
+ 
+-    fn set_atime(&self, time: Duration) {
++    fn set_atime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().atime = time;
++        Ok(())
+     }
+ 
+     fn mtime(&self) -> Duration {
+         self.metadata.read().mtime
+     }
+ 
+-    fn set_mtime(&self, time: Duration) {
++    fn set_mtime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().mtime = time;
++        Ok(())
+     }
+ 
+     fn ctime(&self) -> Duration {
+         self.metadata.read().ctime
+     }
+ 
+-    fn set_ctime(&self, time: Duration) {
++    fn set_ctime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().ctime = time;
++        Ok(())
+     }
+ 
+     fn read_at(&self, offset: usize, writer: &mut VmWriter) -> Result<usize> {
+diff --git a/kernel/src/fs/exfat/inode.rs b/kernel/src/fs/exfat/inode.rs
+index 3b72851ba..6a2f4346b 100644
+--- a/kernel/src/fs/exfat/inode.rs
++++ b/kernel/src/fs/exfat/inode.rs
+@@ -1179,24 +1179,27 @@ impl Inode for ExfatInode {
+         self.inner.read().atime.as_duration().unwrap_or_default()
+     }
+ 
+-    fn set_atime(&self, time: Duration) {
++    fn set_atime(&self, time: Duration) -> Result<()> {
+         self.inner.write().atime = DosTimestamp::from_duration(time).unwrap_or_default();
++        Ok(())
+     }
+ 
+     fn mtime(&self) -> Duration {
+         self.inner.read().mtime.as_duration().unwrap_or_default()
+     }
+ 
+-    fn set_mtime(&self, time: Duration) {
++    fn set_mtime(&self, time: Duration) -> Result<()> {
+         self.inner.write().mtime = DosTimestamp::from_duration(time).unwrap_or_default();
++        Ok(())
+     }
+ 
+     fn ctime(&self) -> Duration {
+         self.inner.read().ctime.as_duration().unwrap_or_default()
+     }
+ 
+-    fn set_ctime(&self, time: Duration) {
++    fn set_ctime(&self, time: Duration) -> Result<()> {
+         self.inner.write().ctime = DosTimestamp::from_duration(time).unwrap_or_default();
++        Ok(())
+     }
+ 
+     fn owner(&self) -> Result<Uid> {
+diff --git a/kernel/src/fs/ext2/impl_for_vfs/inode.rs b/kernel/src/fs/ext2/impl_for_vfs/inode.rs
+index 4aacd12ef..13d1def12 100644
+--- a/kernel/src/fs/ext2/impl_for_vfs/inode.rs
++++ b/kernel/src/fs/ext2/impl_for_vfs/inode.rs
+@@ -36,24 +36,27 @@ impl Inode for Ext2Inode {
+         self.atime()
+     }
+ 
+-    fn set_atime(&self, time: Duration) {
+-        self.set_atime(time)
++    fn set_atime(&self, time: Duration) -> Result<()> {
++        self.set_atime(time);
++        Ok(())
+     }
+ 
+     fn mtime(&self) -> Duration {
+         self.mtime()
+     }
+ 
+-    fn set_mtime(&self, time: Duration) {
+-        self.set_mtime(time)
++    fn set_mtime(&self, time: Duration) -> Result<()> {
++        self.set_mtime(time);
++        Ok(())
+     }
+ 
+     fn ctime(&self) -> Duration {
+         self.ctime()
+     }
+ 
+-    fn set_ctime(&self, time: Duration) {
+-        self.set_ctime(time)
++    fn set_ctime(&self, time: Duration) -> Result<()> {
++        self.set_ctime(time);
++        Ok(())
+     }
+ 
+     fn ino(&self) -> u64 {
+diff --git a/kernel/src/fs/ext2/inode.rs b/kernel/src/fs/ext2/inode.rs
+index a1f40ede7..8ee413d0a 100644
+--- a/kernel/src/fs/ext2/inode.rs
++++ b/kernel/src/fs/ext2/inode.rs
+@@ -22,8 +22,7 @@ use crate::{
+     fs::{
+         path::{is_dot, is_dot_or_dotdot, is_dotdot},
+         utils::{
+-            Extension, FallocMode, Inode as _, InodeMode, Metadata, Permission, XattrName,
+-            XattrNamespace, XattrSetFlags,
++            Extension, FallocMode, InodeMode, Metadata, XattrName, XattrNamespace, XattrSetFlags,
+         },
+     },
+     process::{posix_thread::AsPosixThread, Gid, Uid},
+@@ -830,7 +829,6 @@ impl Inode {
+             Errno::EPERM,
+             "xattr is not supported on the file type",
+         ))?;
+-        self.check_permission(Permission::MAY_WRITE)?;
+         xattr.set(name, value_reader, flags)
+     }
+ 
+@@ -838,7 +836,6 @@ impl Inode {
+         if self.xattr.is_none() {
+             return_errno_with_message!(Errno::ENODATA, "no available xattrs");
+         }
+-        self.check_permission(Permission::MAY_READ)?;
+         self.xattr.as_ref().unwrap().get(name, value_writer)
+     }
+ 
+@@ -847,7 +844,7 @@ impl Inode {
+         namespace: XattrNamespace,
+         list_writer: &mut VmWriter,
+     ) -> Result<usize> {
+-        if self.xattr.is_none() || self.check_permission(Permission::MAY_ACCESS).is_err() {
++        if self.xattr.is_none() {
+             return Ok(0);
+         }
+         self.xattr.as_ref().unwrap().list(namespace, list_writer)
+@@ -858,7 +855,6 @@ impl Inode {
+             Errno::EPERM,
+             "xattr is not supported on the file type",
+         ))?;
+-        self.check_permission(Permission::MAY_WRITE)?;
+         self.xattr.as_ref().unwrap().remove(name)
+     }
+ }
+diff --git a/kernel/src/fs/inode_handle/dyn_cap.rs b/kernel/src/fs/inode_handle/dyn_cap.rs
+index 0bcbf7c82..7bf6c22dc 100644
+--- a/kernel/src/fs/inode_handle/dyn_cap.rs
++++ b/kernel/src/fs/inode_handle/dyn_cap.rs
+@@ -4,12 +4,15 @@ use aster_rights::TRights;
+ use inherit_methods_macro::inherit_methods;
+ 
+ use super::*;
+-use crate::{fs::file_handle::Mappable, prelude::*, process::signal::Pollable};
++use crate::{
++    fs::{file_handle::Mappable, utils::CheckPermission},
++    prelude::*,
++    process::signal::Pollable,
++};
+ 
+ impl InodeHandle<Rights> {
+     pub fn new(path: Path, access_mode: AccessMode, status_flags: StatusFlags) -> Result<Self> {
+-        let inode = path.inode();
+-        inode.check_permission(access_mode.into())?;
++        current_thread!().check_permission(path.inode(), access_mode.into())?;
+         Self::new_unchecked_access(path, access_mode, status_flags)
+     }
+ 
+diff --git a/kernel/src/fs/overlayfs/fs.rs b/kernel/src/fs/overlayfs/fs.rs
+index 6fc0f6222..02cce6add 100644
+--- a/kernel/src/fs/overlayfs/fs.rs
++++ b/kernel/src/fs/overlayfs/fs.rs
+@@ -538,9 +538,9 @@ impl OverlayInode {
+ 
+ #[inherit_methods(from = "self.build_upper_recursively_if_needed().unwrap()")]
+ impl OverlayInode {
+-    pub fn set_atime(&self, time: Duration);
+-    pub fn set_mtime(&self, time: Duration);
+-    pub fn set_ctime(&self, time: Duration);
++    pub fn set_atime(&self, time: Duration) -> Result<()>;
++    pub fn set_mtime(&self, time: Duration) -> Result<()>;
++    pub fn set_ctime(&self, time: Duration) -> Result<()>;
+ }
+ 
+ impl OverlayInode {
+@@ -808,9 +808,9 @@ impl OverlayInode {
+         // The mode is copied up upon creation.
+         upper.set_owner(lower.owner()?)?;
+         upper.set_group(lower.group()?)?;
+-        upper.set_atime(lower.atime());
+-        upper.set_mtime(lower.mtime());
+-        upper.set_ctime(lower.ctime());
++        upper.set_atime(lower.atime())?;
++        upper.set_mtime(lower.mtime())?;
++        upper.set_ctime(lower.ctime())?;
+         Ok(())
+     }
+ 
+@@ -919,11 +919,11 @@ impl Inode for OverlayInode {
+     fn group(&self) -> Result<Gid>;
+     fn set_group(&self, gid: Gid) -> Result<()>;
+     fn atime(&self) -> Duration;
+-    fn set_atime(&self, time: Duration);
++    fn set_atime(&self, time: Duration) -> Result<()>;
+     fn mtime(&self) -> Duration;
+-    fn set_mtime(&self, time: Duration);
++    fn set_mtime(&self, time: Duration) -> Result<()>;
+     fn ctime(&self) -> Duration;
+-    fn set_ctime(&self, time: Duration);
++    fn set_ctime(&self, time: Duration) -> Result<()>;
+     fn page_cache(&self) -> Option<Vmo<Full>>;
+     fn read_at(&self, offset: usize, writer: &mut VmWriter) -> Result<usize>;
+     fn read_direct_at(&self, offset: usize, writer: &mut VmWriter) -> Result<usize>;
+@@ -1431,7 +1431,7 @@ mod tests {
+         assert_eq!(f1.size(), 0);
+         f1.resize(PAGE_SIZE).unwrap();
+         f1.page_cache().unwrap().write_val(0, &3u8).unwrap();
+-        f1.set_atime(Duration::default());
++        f1.set_atime(Duration::default()).unwrap();
+         f1.sync_data().unwrap();
+         let mut data = [0u8; 1];
+         f1.read_at(0, &mut VmWriter::from(data.as_mut_slice()).to_fallible())
+diff --git a/kernel/src/fs/path/dentry.rs b/kernel/src/fs/path/dentry.rs
+index 3e112a811..109c9f7ce 100644
+--- a/kernel/src/fs/path/dentry.rs
++++ b/kernel/src/fs/path/dentry.rs
+@@ -349,11 +349,11 @@ impl Dentry {
+     pub(super) fn group(&self) -> Result<Gid>;
+     pub(super) fn set_group(&self, gid: Gid) -> Result<()>;
+     pub(super) fn atime(&self) -> Duration;
+-    pub(super) fn set_atime(&self, time: Duration);
++    pub(super) fn set_atime(&self, time: Duration) -> Result<()>;
+     pub(super) fn mtime(&self) -> Duration;
+-    pub(super) fn set_mtime(&self, time: Duration);
++    pub(super) fn set_mtime(&self, time: Duration) -> Result<()>;
+     pub(super) fn ctime(&self) -> Duration;
+-    pub(super) fn set_ctime(&self, time: Duration);
++    pub(super) fn set_ctime(&self, time: Duration) -> Result<()>;
+     pub(super) fn is_dentry_cacheable(&self) -> bool;
+     pub(super) fn set_xattr(
+         &self,
+diff --git a/kernel/src/fs/path/mod.rs b/kernel/src/fs/path/mod.rs
+index 13c2f1810..e3ec3fcce 100644
+--- a/kernel/src/fs/path/mod.rs
++++ b/kernel/src/fs/path/mod.rs
+@@ -8,6 +8,7 @@ use inherit_methods_macro::inherit_methods;
+ pub use mount::{Mount, MountPropType};
+ pub use mount_namespace::MountNamespace;
+ 
++use super::utils::CheckPermission;
+ use crate::{
+     fs::{
+         path::dentry::{Dentry, DentryKey},
+@@ -17,7 +18,7 @@ use crate::{
+         },
+     },
+     prelude::*,
+-    process::{Gid, Uid},
++    process::{credentials::capabilities::CapSet, posix_thread::AsPosixThread, Gid, Uid},
+ };
+ 
+ mod dentry;
+@@ -43,13 +44,8 @@ impl Path {
+ 
+     /// Creates a new `Path` to represent the child directory of a file system.
+     pub fn new_fs_child(&self, name: &str, type_: InodeType, mode: InodeMode) -> Result<Self> {
+-        if self
+-            .inode()
+-            .check_permission(Permission::MAY_WRITE)
+-            .is_err()
+-        {
+-            return_errno!(Errno::EACCES);
+-        }
++        current_thread!().check_permission(self.inode(), Permission::MAY_WRITE)?;
++
+         let new_child_dentry = self.dentry.create(name, type_, mode)?;
+         Ok(Self::new(self.mount.clone(), new_child_dentry))
+     }
+@@ -73,7 +69,10 @@ impl Path {
+         if self.type_() != InodeType::Dir {
+             return_errno_with_message!(Errno::ENOTDIR, "the path is not a directory");
+         }
+-        if self.inode().check_permission(Permission::MAY_EXEC).is_err() {
++        if current_thread!()
++            .check_permission(self.inode(), Permission::MAY_EXEC)
++            .is_err()
++        {
+             return_errno_with_message!(Errno::EACCES, "the path cannot be looked up");
+         }
+         if name.len() > NAME_MAX {
+@@ -215,6 +214,9 @@ impl Path {
+ 
+         let current_ns_proxy = ctx.thread_local.borrow_ns_proxy();
+         let current_mnt_ns = current_ns_proxy.unwrap().mnt_ns();
++        current_mnt_ns
++            .owner()
++            .check_cap(CapSet::SYS_ADMIN, ctx.posix_thread)?;
+         if !current_mnt_ns.owns(&self.mount) {
+             return_errno_with_message!(Errno::EINVAL, "the path is not in this mount namespace");
+         }
+@@ -245,6 +247,9 @@ impl Path {
+ 
+         let current_ns_proxy = ctx.thread_local.borrow_ns_proxy();
+         let current_mnt_ns = current_ns_proxy.unwrap().mnt_ns();
++        current_mnt_ns
++            .owner()
++            .check_cap(CapSet::SYS_ADMIN, ctx.posix_thread)?;
+         if !current_mnt_ns.owns(&self.mount) {
+             return_errno_with_message!(Errno::EINVAL, "the path is not in this mount namespace");
+         }
+@@ -268,6 +273,9 @@ impl Path {
+     pub fn bind_mount_to(&self, dst_path: &Self, recursive: bool, ctx: &Context) -> Result<()> {
+         let current_ns_proxy = ctx.thread_local.borrow_ns_proxy();
+         let current_mnt_ns = current_ns_proxy.unwrap().mnt_ns();
++        current_mnt_ns
++            .owner()
++            .check_cap(CapSet::SYS_ADMIN, ctx.posix_thread)?;
+         if !current_mnt_ns.owns(&self.mount) {
+             return_errno_with_message!(
+                 Errno::EINVAL,
+@@ -305,6 +313,9 @@ impl Path {
+ 
+         let current_ns_proxy = ctx.thread_local.borrow_ns_proxy();
+         let current_mnt_ns = current_ns_proxy.unwrap().mnt_ns();
++        current_mnt_ns
++            .owner()
++            .check_cap(CapSet::SYS_ADMIN, ctx.posix_thread)?;
+         if !current_mnt_ns.owns(&self.mount) {
+             return_errno_with_message!(
+                 Errno::EINVAL,
+@@ -334,6 +345,9 @@ impl Path {
+ 
+         let current_ns_proxy = ctx.thread_local.borrow_ns_proxy();
+         let current_mnt_ns = current_ns_proxy.unwrap().mnt_ns();
++        current_mnt_ns
++            .owner()
++            .check_cap(CapSet::SYS_ADMIN, ctx.posix_thread)?;
+         if !current_mnt_ns.owns(&self.mount) {
+             return_errno_with_message!(Errno::EINVAL, "the path is not in this mount namespace");
+         }
+@@ -345,6 +359,18 @@ impl Path {
+ 
+     /// Creates a `Path` by making an inode of the `type_` with the `mode`.
+     pub fn mknod(&self, name: &str, mode: InodeMode, type_: MknodType) -> Result<Self> {
++        if let Some(posix_thread) = current_thread!().as_posix_thread() {
++            if matches!(type_, MknodType::CharDevice(_) | MknodType::BlockDevice(_))
++                && !posix_thread
++                    .credentials()
++                    .effective_capset()
++                    .contains(CapSet::MKNOD)
++            {
++                return_errno_with_message!(Errno::EPERM, "creating device files is not allowed");
++            }
++            posix_thread.check_permission(self.inode(), Permission::MAY_WRITE)?;
++        }
++
+         let inner = self.dentry.mknod(name, mode, type_)?;
+         Ok(Self::new(self.mount.clone(), inner))
+     }
+@@ -355,6 +381,8 @@ impl Path {
+             return_errno_with_message!(Errno::EXDEV, "the operation cannot cross mounts");
+         }
+ 
++        current_thread!().check_permission(self.inode(), Permission::MAY_WRITE)?;
++
+         self.dentry.link(&old.dentry, name)
+     }
+ 
+@@ -364,49 +392,95 @@ impl Path {
+             return_errno_with_message!(Errno::EXDEV, "the operation cannot cross mounts");
+         }
+ 
++        let current_thread = current_thread!();
++        current_thread.check_permission(self.inode(), Permission::MAY_WRITE)?;
++        current_thread.check_permission(new_dir.inode(), Permission::MAY_WRITE)?;
++
+         self.dentry.rename(old_name, &new_dir.dentry, new_name)
+     }
++
++    /// Unlinks a file in the `Path`.
++    pub fn unlink(&self, name: &str) -> Result<()> {
++        current_thread!().check_permission(self.inode(), Permission::MAY_WRITE)?;
++
++        self.dentry.unlink(name)
++    }
++
++    /// Removes a directory in the `Path`.
++    pub fn rmdir(&self, name: &str) -> Result<()> {
++        current_thread!().check_permission(self.inode(), Permission::MAY_WRITE)?;
++
++        self.dentry.rmdir(name)
++    }
++
++    /// Resizes the file specified in the `Path`.
++    pub fn resize(&self, size: usize) -> Result<()> {
++        current_thread!().check_permission(self.inode(), Permission::MAY_WRITE)?;
++
++        self.dentry.resize(size)
++    }
++
++    /// Sets an extended attribute value.
++    pub fn set_xattr(
++        &self,
++        name: XattrName,
++        value_reader: &mut VmReader,
++        flags: XattrSetFlags,
++    ) -> Result<()> {
++        current_thread!().check_permission(self.inode(), Permission::MAY_WRITE)?;
++
++        self.dentry.set_xattr(name, value_reader, flags)
++    }
++
++    /// Gets an extended attribute value.
++    pub fn get_xattr(&self, name: XattrName, value_writer: &mut VmWriter) -> Result<usize> {
++        current_thread!().check_permission(self.inode(), Permission::MAY_READ)?;
++
++        self.dentry.get_xattr(name, value_writer)
++    }
++
++    /// Lists all extended attribute values.
++    pub fn list_xattr(
++        &self,
++        namespace: XattrNamespace,
++        list_writer: &mut VmWriter,
++    ) -> Result<usize> {
++        current_thread!().check_permission(self.inode(), Permission::MAY_READ)?;
++
++        self.dentry.list_xattr(namespace, list_writer)
++    }
++
++    /// Removes an extended attribute value.
++    pub fn remove_xattr(&self, name: XattrName) -> Result<()> {
++        current_thread!().check_permission(self.inode(), Permission::MAY_WRITE)?;
++
++        self.dentry.remove_xattr(name)
++    }
+ }
+ 
+ #[inherit_methods(from = "self.dentry")]
+ impl Path {
+-    pub fn unlink(&self, name: &str) -> Result<()>;
+-    pub fn rmdir(&self, name: &str) -> Result<()>;
+     pub fn fs(&self) -> Arc<dyn FileSystem>;
+     pub fn sync_all(&self) -> Result<()>;
+     pub fn sync_data(&self) -> Result<()>;
+     pub fn metadata(&self) -> Metadata;
+     pub fn type_(&self) -> InodeType;
++    pub fn size(&self) -> usize;
+     pub fn mode(&self) -> Result<InodeMode>;
+     pub fn set_mode(&self, mode: InodeMode) -> Result<()>;
+-    pub fn size(&self) -> usize;
+-    pub fn resize(&self, size: usize) -> Result<()>;
+     pub fn owner(&self) -> Result<Uid>;
+     pub fn set_owner(&self, uid: Uid) -> Result<()>;
+     pub fn group(&self) -> Result<Gid>;
+     pub fn set_group(&self, gid: Gid) -> Result<()>;
+     pub fn atime(&self) -> Duration;
+-    pub fn set_atime(&self, time: Duration);
++    pub fn set_atime(&self, time: Duration) -> Result<()>;
+     pub fn mtime(&self) -> Duration;
+-    pub fn set_mtime(&self, time: Duration);
++    pub fn set_mtime(&self, time: Duration) -> Result<()>;
+     pub fn ctime(&self) -> Duration;
+-    pub fn set_ctime(&self, time: Duration);
++    pub fn set_ctime(&self, time: Duration) -> Result<()>;
+     pub fn key(&self) -> DentryKey;
+     pub fn inode(&self) -> &Arc<dyn Inode>;
+     pub fn is_mountpoint(&self) -> bool;
+-    pub fn set_xattr(
+-        &self,
+-        name: XattrName,
+-        value_reader: &mut VmReader,
+-        flags: XattrSetFlags,
+-    ) -> Result<()>;
+-    pub fn get_xattr(&self, name: XattrName, value_writer: &mut VmWriter) -> Result<usize>;
+-    pub fn list_xattr(
+-        &self,
+-        namespace: XattrNamespace,
+-        list_writer: &mut VmWriter,
+-    ) -> Result<usize>;
+-    pub fn remove_xattr(&self, name: XattrName) -> Result<()>;
+ }
+ 
+ /// Checks if the file name is ".", indicating it's the current directory.
+diff --git a/kernel/src/fs/procfs/template/dir.rs b/kernel/src/fs/procfs/template/dir.rs
+index 5e2fe964a..f1f52131f 100644
+--- a/kernel/src/fs/procfs/template/dir.rs
++++ b/kernel/src/fs/procfs/template/dir.rs
+@@ -78,11 +78,11 @@ impl<D: DirOps + 'static> Inode for ProcDir<D> {
+     fn group(&self) -> Result<Gid>;
+     fn set_group(&self, gid: Gid) -> Result<()>;
+     fn atime(&self) -> Duration;
+-    fn set_atime(&self, time: Duration);
++    fn set_atime(&self, time: Duration) -> Result<()>;
+     fn mtime(&self) -> Duration;
+-    fn set_mtime(&self, time: Duration);
++    fn set_mtime(&self, time: Duration) -> Result<()>;
+     fn ctime(&self) -> Duration;
+-    fn set_ctime(&self, time: Duration);
++    fn set_ctime(&self, time: Duration) -> Result<()>;
+     fn fs(&self) -> Arc<dyn FileSystem>;
+ 
+     fn resize(&self, _new_size: usize) -> Result<()> {
+diff --git a/kernel/src/fs/procfs/template/file.rs b/kernel/src/fs/procfs/template/file.rs
+index fd785c8a1..860b3e658 100644
+--- a/kernel/src/fs/procfs/template/file.rs
++++ b/kernel/src/fs/procfs/template/file.rs
+@@ -43,11 +43,11 @@ impl<F: FileOps + 'static> Inode for ProcFile<F> {
+     fn group(&self) -> Result<Gid>;
+     fn set_group(&self, gid: Gid) -> Result<()>;
+     fn atime(&self) -> Duration;
+-    fn set_atime(&self, time: Duration);
++    fn set_atime(&self, time: Duration) -> Result<()>;
+     fn mtime(&self) -> Duration;
+-    fn set_mtime(&self, time: Duration);
++    fn set_mtime(&self, time: Duration) -> Result<()>;
+     fn ctime(&self) -> Duration;
+-    fn set_ctime(&self, time: Duration);
++    fn set_ctime(&self, time: Duration) -> Result<()>;
+     fn fs(&self) -> Arc<dyn FileSystem>;
+ 
+     fn resize(&self, _new_size: usize) -> Result<()> {
+diff --git a/kernel/src/fs/procfs/template/mod.rs b/kernel/src/fs/procfs/template/mod.rs
+index 89d2f4d57..ae2d92805 100644
+--- a/kernel/src/fs/procfs/template/mod.rs
++++ b/kernel/src/fs/procfs/template/mod.rs
+@@ -59,24 +59,27 @@ impl Common {
+         self.metadata.read().atime
+     }
+ 
+-    pub fn set_atime(&self, time: Duration) {
++    pub fn set_atime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().atime = time;
++        Ok(())
+     }
+ 
+     pub fn mtime(&self) -> Duration {
+         self.metadata.read().mtime
+     }
+ 
+-    pub fn set_mtime(&self, time: Duration) {
++    pub fn set_mtime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().mtime = time;
++        Ok(())
+     }
+ 
+     pub fn ctime(&self) -> Duration {
+         self.metadata.read().ctime
+     }
+ 
+-    pub fn set_ctime(&self, time: Duration) {
++    pub fn set_ctime(&self, time: Duration) -> Result<()> {
+         self.metadata.write().ctime = time;
++        Ok(())
+     }
+ 
+     pub fn mode(&self) -> Result<InodeMode> {
+diff --git a/kernel/src/fs/procfs/template/sym.rs b/kernel/src/fs/procfs/template/sym.rs
+index d39e0e945..60cee445f 100644
+--- a/kernel/src/fs/procfs/template/sym.rs
++++ b/kernel/src/fs/procfs/template/sym.rs
+@@ -40,11 +40,11 @@ impl<S: SymOps + 'static> Inode for ProcSym<S> {
+     fn group(&self) -> Result<Gid>;
+     fn set_group(&self, gid: Gid) -> Result<()>;
+     fn atime(&self) -> Duration;
+-    fn set_atime(&self, time: Duration);
++    fn set_atime(&self, time: Duration) -> Result<()>;
+     fn mtime(&self) -> Duration;
+-    fn set_mtime(&self, time: Duration);
++    fn set_mtime(&self, time: Duration) -> Result<()>;
+     fn ctime(&self) -> Duration;
+-    fn set_ctime(&self, time: Duration);
++    fn set_ctime(&self, time: Duration) -> Result<()>;
+     fn fs(&self) -> Arc<dyn FileSystem>;
+ 
+     fn resize(&self, _new_size: usize) -> Result<()> {
+diff --git a/kernel/src/fs/ramfs/fs.rs b/kernel/src/fs/ramfs/fs.rs
+index f5c3aa6e3..ffb5e56f4 100644
+--- a/kernel/src/fs/ramfs/fs.rs
++++ b/kernel/src/fs/ramfs/fs.rs
+@@ -25,13 +25,13 @@ use crate::{
+         path::{is_dot, is_dot_or_dotdot, is_dotdot},
+         registry::{FsProperties, FsType},
+         utils::{
+-            mkmod, CStr256, CachePage, DirentVisitor, Extension, FallocMode, FileSystem, FsFlags,
+-            Inode, InodeMode, InodeType, IoctlCmd, Metadata, MknodType, PageCache,
+-            PageCacheBackend, Permission, SuperBlock, XattrName, XattrNamespace, XattrSetFlags,
++            mkmod, CStr256, CachePage, CheckPermission, DirentVisitor, Extension, FallocMode,
++            FileSystem, FsFlags, Inode, InodeMode, InodeType, IoctlCmd, Metadata, MknodType,
++            PageCache, PageCacheBackend, SuperBlock, XattrName, XattrNamespace, XattrSetFlags,
+         },
+     },
+     prelude::*,
+-    process::{signal::PollHandle, Gid, Uid},
++    process::{posix_thread::AsPosixThread, signal::PollHandle, Gid, Uid},
+     time::clocks::RealTimeCoarseClock,
+     vm::vmo::Vmo,
+ };
+@@ -555,7 +555,7 @@ impl Inode for RamInode {
+         };
+ 
+         if self.typ == InodeType::File {
+-            self.set_atime(now());
++            self.metadata.lock().set_atime(now());
+         }
+         Ok(read_len)
+     }
+@@ -637,24 +637,33 @@ impl Inode for RamInode {
+         self.metadata.lock().atime
+     }
+ 
+-    fn set_atime(&self, time: Duration) {
+-        self.metadata.lock().set_atime(time);
++    fn set_atime(&self, time: Duration) -> Result<()> {
++        let mut inode_meta = self.metadata.lock();
++        current_thread!().check_owner(inode_meta.uid)?;
++        inode_meta.set_atime(time);
++        Ok(())
+     }
+ 
+     fn mtime(&self) -> Duration {
+         self.metadata.lock().mtime
+     }
+ 
+-    fn set_mtime(&self, time: Duration) {
+-        self.metadata.lock().set_mtime(time);
++    fn set_mtime(&self, time: Duration) -> Result<()> {
++        let mut inode_meta = self.metadata.lock();
++        current_thread!().check_owner(inode_meta.uid)?;
++        inode_meta.set_mtime(time);
++        Ok(())
+     }
+ 
+     fn ctime(&self) -> Duration {
+         self.metadata.lock().ctime
+     }
+ 
+-    fn set_ctime(&self, time: Duration) {
+-        self.metadata.lock().set_ctime(time);
++    fn set_ctime(&self, time: Duration) -> Result<()> {
++        let mut inode_meta = self.metadata.lock();
++        current_thread!().check_owner(inode_meta.uid)?;
++        inode_meta.set_ctime(time);
++        Ok(())
+     }
+ 
+     fn ino(&self) -> u64 {
+@@ -671,6 +680,7 @@ impl Inode for RamInode {
+ 
+     fn set_mode(&self, mode: InodeMode) -> Result<()> {
+         let mut inode_meta = self.metadata.lock();
++        current_thread!().check_owner(inode_meta.uid)?;
+         inode_meta.mode = mode;
+         inode_meta.set_ctime(now());
+         Ok(())
+@@ -682,6 +692,7 @@ impl Inode for RamInode {
+ 
+     fn set_owner(&self, uid: Uid) -> Result<()> {
+         let mut inode_meta = self.metadata.lock();
++        current_thread!().check_owner_change(inode_meta.uid, uid)?;
+         inode_meta.uid = uid;
+         inode_meta.set_ctime(now());
+         Ok(())
+@@ -693,6 +704,7 @@ impl Inode for RamInode {
+ 
+     fn set_group(&self, gid: Gid) -> Result<()> {
+         let mut inode_meta = self.metadata.lock();
++        current_thread!().check_owner(inode_meta.uid)?;
+         inode_meta.gid = gid;
+         inode_meta.set_ctime(now());
+         Ok(())
+@@ -756,15 +768,17 @@ impl Inode for RamInode {
+         }
+ 
+         let fs = self.fs.upgrade().unwrap();
++        let (uid, gid) = if let Some(posix_thread) = current_thread!().as_posix_thread() {
++            let creds = posix_thread.credentials();
++            (creds.fsuid(), creds.fsgid())
++        } else {
++            (Uid::new_root(), Gid::new_root())
++        };
+         let new_inode = match type_ {
+-            InodeType::File => RamInode::new_file(&fs, mode, Uid::new_root(), Gid::new_root()),
+-            InodeType::SymLink => {
+-                RamInode::new_symlink(&fs, mode, Uid::new_root(), Gid::new_root())
+-            }
+-            InodeType::Socket => RamInode::new_socket(&fs, mode, Uid::new_root(), Gid::new_root()),
+-            InodeType::Dir => {
+-                RamInode::new_dir(&fs, mode, Uid::new_root(), Gid::new_root(), &self.this)
+-            }
++            InodeType::File => RamInode::new_file(&fs, mode, uid, gid),
++            InodeType::SymLink => RamInode::new_symlink(&fs, mode, uid, gid),
++            InodeType::Socket => RamInode::new_socket(&fs, mode, uid, gid),
++            InodeType::Dir => RamInode::new_dir(&fs, mode, uid, gid, &self.this),
+             _ => {
+                 panic!("unsupported inode type");
+             }
+@@ -798,7 +812,7 @@ impl Inode for RamInode {
+             .read()
+             .visit_entry(offset, visitor)?;
+ 
+-        self.set_atime(now());
++        self.metadata.lock().set_atime(now());
+ 
+         Ok(cnt)
+     }
+@@ -994,8 +1008,8 @@ impl Inode for RamInode {
+                 self_meta.set_mtime(now);
+                 self_meta.set_ctime(now);
+                 drop(self_meta);
+-                src_inode.set_ctime(now);
+-                dst_inode.set_ctime(now);
++                src_inode.metadata.lock().set_ctime(now);
++                dst_inode.metadata.lock().set_ctime(now);
+             } else {
+                 self_dir.substitute_entry(src_idx, (CStr256::from(new_name), src_inode.clone()));
+                 drop(self_dir);
+@@ -1004,7 +1018,7 @@ impl Inode for RamInode {
+                 self_meta.set_mtime(now);
+                 self_meta.set_ctime(now);
+                 drop(self_meta);
+-                src_inode.set_ctime(now);
++                src_inode.metadata.lock().set_ctime(now);
+             }
+         }
+         // Or rename across different directories
+@@ -1049,8 +1063,8 @@ impl Inode for RamInode {
+                 target_meta.set_mtime(now);
+                 target_meta.set_ctime(now);
+                 drop(target_meta);
+-                dst_inode.set_ctime(now);
+-                src_inode.set_ctime(now);
++                dst_inode.metadata.lock().set_ctime(now);
++                src_inode.metadata.lock().set_ctime(now);
+             } else {
+                 self_dir.remove_entry(src_idx);
+                 target_dir.append_entry(new_name, src_inode.clone());
+@@ -1075,7 +1089,7 @@ impl Inode for RamInode {
+                 target_meta.set_mtime(now);
+                 target_meta.set_ctime(now);
+                 drop(target_meta);
+-                src_inode.set_ctime(now);
++                src_inode.metadata.lock().set_ctime(now);
+             }
+ 
+             if is_dir {
+@@ -1215,14 +1229,12 @@ impl Inode for RamInode {
+         flags: XattrSetFlags,
+     ) -> Result<()> {
+         RamXattr::check_file_type_for_xattr(self.typ)?;
+-        self.check_permission(Permission::MAY_WRITE)?;
+         self.xattr.set(name, value_reader, flags)
+     }
+ 
+     fn get_xattr(&self, name: XattrName, value_writer: &mut VmWriter) -> Result<usize> {
+         RamXattr::check_file_type_for_xattr(self.typ)
+             .map_err(|_| Error::with_message(Errno::ENODATA, "no available xattrs"))?;
+-        self.check_permission(Permission::MAY_READ)?;
+         self.xattr.get(name, value_writer)
+     }
+ 
+@@ -1230,15 +1242,11 @@ impl Inode for RamInode {
+         if RamXattr::check_file_type_for_xattr(self.typ).is_err() {
+             return Ok(0);
+         }
+-        if self.check_permission(Permission::MAY_ACCESS).is_err() {
+-            return Ok(0);
+-        }
+         self.xattr.list(namespace, list_writer)
+     }
+ 
+     fn remove_xattr(&self, name: XattrName) -> Result<()> {
+         RamXattr::check_file_type_for_xattr(self.typ)?;
+-        self.check_permission(Permission::MAY_WRITE)?;
+         self.xattr.remove(name)
+     }
+ }
+diff --git a/kernel/src/fs/utils/inode.rs b/kernel/src/fs/utils/inode.rs
+index f02a46b80..d01134547 100644
+--- a/kernel/src/fs/utils/inode.rs
++++ b/kernel/src/fs/utils/inode.rs
+@@ -6,20 +6,16 @@ use core::{any::TypeId, time::Duration};
+ 
+ use aster_rights::Full;
+ use core2::io::{Error as IoError, ErrorKind as IoErrorKind, Result as IoResult, Write};
+-use ostd::task::Task;
+ 
+ use super::{
+-    AccessMode, DirentVisitor, FallocMode, FileSystem, InodeMode, IoctlCmd, XattrName,
+-    XattrNamespace, XattrSetFlags,
++    DirentVisitor, FallocMode, FileSystem, InodeMode, IoctlCmd, XattrName, XattrNamespace,
++    XattrSetFlags,
+ };
+ use crate::{
+     events::IoEvents,
+     fs::device::{Device, DeviceType},
+     prelude::*,
+-    process::{
+-        credentials::capabilities::CapSet, posix_thread::AsPosixThread, signal::PollHandle, Gid,
+-        Uid,
+-    },
++    process::{signal::PollHandle, Gid, Uid},
+     time::clocks::RealTimeCoarseClock,
+     vm::vmo::Vmo,
+ };
+@@ -74,43 +70,6 @@ impl From<DeviceType> for InodeType {
+     }
+ }
+ 
+-bitflags! {
+-    pub struct Permission: u16 {
+-        // This implementation refers the implementation of linux
+-        // https://elixir.bootlin.com/linux/v6.0.9/source/include/linux/fs.h#L95
+-        const MAY_EXEC		= 0x0001;
+-        const MAY_WRITE		= 0x0002;
+-        const MAY_READ		= 0x0004;
+-        const MAY_APPEND    = 0x0008;
+-        const MAY_ACCESS	= 0x0010;
+-        const MAY_OPEN		= 0x0020;
+-        const MAY_CHDIR		= 0x0040;
+-        const MAY_NOT_BLOCK	= 0x0080;
+-    }
+-}
+-impl Permission {
+-    pub fn may_read(&self) -> bool {
+-        self.contains(Self::MAY_READ)
+-    }
+-
+-    pub fn may_write(&self) -> bool {
+-        self.contains(Self::MAY_WRITE)
+-    }
+-
+-    pub fn may_exec(&self) -> bool {
+-        self.contains(Self::MAY_EXEC)
+-    }
+-}
+-impl From<AccessMode> for Permission {
+-    fn from(access_mode: AccessMode) -> Permission {
+-        match access_mode {
+-            AccessMode::O_RDONLY => Permission::MAY_READ,
+-            AccessMode::O_WRONLY => Permission::MAY_WRITE,
+-            AccessMode::O_RDWR => Permission::MAY_READ | Permission::MAY_WRITE,
+-        }
+-    }
+-}
+-
+ #[derive(Debug, Clone, Copy)]
+ pub struct Metadata {
+     pub dev: u64,
+@@ -282,15 +241,15 @@ pub trait Inode: Any + Sync + Send {
+ 
+     fn atime(&self) -> Duration;
+ 
+-    fn set_atime(&self, time: Duration);
++    fn set_atime(&self, time: Duration) -> Result<()>;
+ 
+     fn mtime(&self) -> Duration;
+ 
+-    fn set_mtime(&self, time: Duration);
++    fn set_mtime(&self, time: Duration) -> Result<()>;
+ 
+     fn ctime(&self) -> Duration;
+ 
+-    fn set_ctime(&self, time: Duration);
++    fn set_ctime(&self, time: Duration) -> Result<()>;
+ 
+     fn page_cache(&self) -> Option<Vmo<Full>> {
+         None
+@@ -431,72 +390,6 @@ pub trait Inode: Any + Sync + Send {
+     fn remove_xattr(&self, name: XattrName) -> Result<()> {
+         Err(Error::new(Errno::EOPNOTSUPP))
+     }
+-
+-    /// Used to check for read/write/execute permissions on a file.
+-    ///
+-    /// Similar to Linux, using "fsuid" here allows setting filesystem permissions
+-    /// without changing the "normal" uids for other tasks.
+-    fn check_permission(&self, mut perm: Permission) -> Result<()> {
+-        let creds = match Task::current() {
+-            Some(task) => match task.as_posix_thread() {
+-                Some(thread) => thread.credentials(),
+-                None => return Ok(()),
+-            },
+-            None => return Ok(()),
+-        };
+-
+-        // With DAC_OVERRIDE capability, the user can bypass some permission checks.
+-        if creds.effective_capset().contains(CapSet::DAC_OVERRIDE) {
+-            // Read/write DACs are always overridable.
+-            perm -= Permission::MAY_READ | Permission::MAY_WRITE;
+-
+-            // Executable DACs are overridable when there is at least one exec bit set.
+-            if perm.may_exec() {
+-                let metadata = self.metadata();
+-                let mode = metadata.mode;
+-
+-                if mode.is_owner_executable()
+-                    || mode.is_group_executable()
+-                    || mode.is_other_executable()
+-                {
+-                    perm -= Permission::MAY_EXEC;
+-                } else {
+-                    return_errno_with_message!(
+-                        Errno::EACCES,
+-                        "root execute permission denied: no execute bits set"
+-                    );
+-                }
+-            }
+-        }
+-
+-        perm =
+-            perm.intersection(Permission::MAY_READ | Permission::MAY_WRITE | Permission::MAY_EXEC);
+-        let metadata = self.metadata();
+-        let mode = metadata.mode;
+-
+-        if metadata.uid == creds.fsuid() {
+-            if (perm.may_read() && !mode.is_owner_readable())
+-                || (perm.may_write() && !mode.is_owner_writable())
+-                || (perm.may_exec() && !mode.is_owner_executable())
+-            {
+-                return_errno_with_message!(Errno::EACCES, "owner permission check failed");
+-            }
+-        } else if metadata.gid == creds.fsgid() {
+-            if (perm.may_read() && !mode.is_group_readable())
+-                || (perm.may_write() && !mode.is_group_writable())
+-                || (perm.may_exec() && !mode.is_group_executable())
+-            {
+-                return_errno_with_message!(Errno::EACCES, "group permission check failed");
+-            }
+-        } else if (perm.may_read() && !mode.is_other_readable())
+-            || (perm.may_write() && !mode.is_other_writable())
+-            || (perm.may_exec() && !mode.is_other_executable())
+-        {
+-            return_errno_with_message!(Errno::EACCES, "other permission check failed");
+-        }
+-
+-        Ok(())
+-    }
+ }
+ 
+ impl dyn Inode {
+diff --git a/kernel/src/fs/utils/mod.rs b/kernel/src/fs/utils/mod.rs
+index 4cf27eaad..6f97e4dd5 100644
+--- a/kernel/src/fs/utils/mod.rs
++++ b/kernel/src/fs/utils/mod.rs
+@@ -11,11 +11,12 @@ pub use falloc_mode::FallocMode;
+ pub use file_creation_mask::{AtomicFileCreationMask, FileCreationMask};
+ pub use flock::{FlockItem, FlockList, FlockType};
+ pub use fs::{FileSystem, FsFlags, SuperBlock};
+-pub use inode::{Extension, Inode, InodeType, Metadata, MknodType, Permission};
++pub use inode::{Extension, Inode, InodeType, Metadata, MknodType};
+ pub use inode_mode::InodeMode;
+ pub(crate) use inode_mode::{chmod, mkmod, perms_to_mask, who_and_perms_to_mask, who_to_mask};
+ pub use ioctl::IoctlCmd;
+ pub use page_cache::{CachePage, PageCache, PageCacheBackend};
++pub use permission::{CheckPermission, Permission};
+ pub use random_test::{generate_random_operation, new_fs_in_memory};
+ pub use range_lock::{FileRange, RangeLockItem, RangeLockList, RangeLockType, OFFSET_MAX};
+ pub use status_flags::StatusFlags;
+@@ -37,6 +38,7 @@ mod inode;
+ mod inode_mode;
+ mod ioctl;
+ mod page_cache;
++mod permission;
+ mod random_test;
+ mod range_lock;
+ mod status_flags;
+diff --git a/kernel/src/fs/utils/permission.rs b/kernel/src/fs/utils/permission.rs
+new file mode 100644
+index 000000000..4f8b669c1
+--- /dev/null
++++ b/kernel/src/fs/utils/permission.rs
+@@ -0,0 +1,184 @@
++// SPDX-License-Identifier: MPL-2.0
++
++use bitflags::bitflags;
++
++use super::{AccessMode, Inode};
++use crate::{
++    prelude::*,
++    process::{
++        credentials::capabilities::CapSet,
++        posix_thread::{AsPosixThread, PosixThread},
++        Uid,
++    },
++    thread::Thread,
++};
++
++bitflags! {
++    /// File permissions.
++    ///
++    /// Reference: <https://elixir.bootlin.com/linux/v6.0.9/source/include/linux/fs.h#L95>.
++    pub struct Permission: u16 {
++        const MAY_EXEC		= 0x0001;
++        const MAY_WRITE 	= 0x0002;
++        const MAY_READ		= 0x0004;
++        const MAY_APPEND        = 0x0008;
++        const MAY_ACCESS	= 0x0010;
++        const MAY_OPEN		= 0x0020;
++        const MAY_CHDIR		= 0x0040;
++        const MAY_NOT_BLOCK	= 0x0080;
++    }
++}
++
++impl Permission {
++    pub fn may_read(&self) -> bool {
++        self.contains(Self::MAY_READ)
++    }
++
++    pub fn may_write(&self) -> bool {
++        self.contains(Self::MAY_WRITE)
++    }
++
++    pub fn may_exec(&self) -> bool {
++        self.contains(Self::MAY_EXEC)
++    }
++}
++
++impl From<AccessMode> for Permission {
++    fn from(access_mode: AccessMode) -> Permission {
++        match access_mode {
++            AccessMode::O_RDONLY => Permission::MAY_READ,
++            AccessMode::O_WRONLY => Permission::MAY_WRITE,
++            AccessMode::O_RDWR => Permission::MAY_READ | Permission::MAY_WRITE,
++        }
++    }
++}
++
++/// A helper trait to perform filesystem permission checks.
++///
++/// Similar to Linux, using filesystem UIDs here allows checking filesystem permissions
++/// without changing the effective UIDs for other tasks.
++pub trait CheckPermission {
++    /// Checks whether the thread can have read/write/execute permission on a file.
++    ///
++    /// This will always succeed if the thread has the DAC_OVERRIDE capability.
++    fn check_permission(&self, inode: &Arc<dyn Inode>, perm: Permission) -> Result<()>;
++
++    /// Checks whether the thread can have read/write/execute permission on a file.
++    ///
++    /// This will perform checks even if the thread has the DAC_OVERRIDE capability.
++    fn check_permission_strict(&self, inode: &Arc<dyn Inode>, perm: Permission) -> Result<()>;
++
++    /// Checks whether the thread is the owner of a file.
++    fn check_owner(&self, owner: Uid) -> Result<()>;
++
++    /// Checks whether the thread can change the owner of a file.
++    fn check_owner_change(&self, owner: Uid, new_owner: Uid) -> Result<()>;
++}
++
++impl CheckPermission for PosixThread {
++    fn check_permission(&self, inode: &Arc<dyn Inode>, perm: Permission) -> Result<()> {
++        if self
++            .credentials()
++            .effective_capset()
++            .contains(CapSet::DAC_OVERRIDE)
++        {
++            return Ok(());
++        }
++
++        self.check_permission_strict(inode, perm)
++    }
++
++    fn check_permission_strict(&self, inode: &Arc<dyn Inode>, perm: Permission) -> Result<()> {
++        let creds = self.credentials();
++
++        let metadata = inode.metadata();
++        let mode = metadata.mode;
++
++        if metadata.uid == creds.fsuid() {
++            if (perm.may_read() && !mode.is_owner_readable())
++                || (perm.may_write() && !mode.is_owner_writable())
++                || (perm.may_exec() && !mode.is_owner_executable())
++            {
++                return_errno_with_message!(
++                    Errno::EACCES,
++                    "the file's owner permission is not enough"
++                );
++            }
++        } else if metadata.gid == creds.fsgid() {
++            if (perm.may_read() && !mode.is_group_readable())
++                || (perm.may_write() && !mode.is_group_writable())
++                || (perm.may_exec() && !mode.is_group_executable())
++            {
++                return_errno_with_message!(
++                    Errno::EACCES,
++                    "the file's group permission is not enough"
++                );
++            }
++        } else if (perm.may_read() && !mode.is_other_readable())
++            || (perm.may_write() && !mode.is_other_writable())
++            || (perm.may_exec() && !mode.is_other_executable())
++        {
++            return_errno_with_message!(Errno::EACCES, "the file's other permission is not enough");
++        }
++
++        Ok(())
++    }
++
++    fn check_owner(&self, owner: Uid) -> Result<()> {
++        let creds = self.credentials();
++
++        if creds.effective_capset().contains(CapSet::FOWNER) {
++            return Ok(());
++        }
++
++        if creds.fsuid() != owner {
++            return_errno_with_message!(Errno::EPERM, "the thread does not own the file");
++        }
++
++        Ok(())
++    }
++
++    fn check_owner_change(&self, owner: Uid, new_owner: Uid) -> Result<()> {
++        let creds = self.credentials();
++
++        if creds.effective_capset().contains(CapSet::CHOWN) {
++            return Ok(());
++        }
++
++        if creds.fsuid() != owner || new_owner != owner {
++            return_errno_with_message!(Errno::EPERM, "the thread cannot change the file ownership");
++        }
++
++        Ok(())
++    }
++}
++
++impl CheckPermission for Thread {
++    fn check_permission(&self, inode: &Arc<dyn Inode>, perm: Permission) -> Result<()> {
++        let Some(posix_thread) = self.as_posix_thread() else {
++            return Ok(());
++        };
++        posix_thread.check_permission(inode, perm)
++    }
++
++    fn check_permission_strict(&self, inode: &Arc<dyn Inode>, perm: Permission) -> Result<()> {
++        let Some(posix_thread) = self.as_posix_thread() else {
++            return Ok(());
++        };
++        posix_thread.check_permission_strict(inode, perm)
++    }
++
++    fn check_owner(&self, owner: Uid) -> Result<()> {
++        let Some(posix_thread) = self.as_posix_thread() else {
++            return Ok(());
++        };
++        posix_thread.check_owner(owner)
++    }
++
++    fn check_owner_change(&self, owner: Uid, new_owner: Uid) -> Result<()> {
++        let Some(posix_thread) = self.as_posix_thread() else {
++            return Ok(());
++        };
++        posix_thread.check_owner_change(owner, new_owner)
++    }
++}
+diff --git a/kernel/src/fs/utils/systree_inode.rs b/kernel/src/fs/utils/systree_inode.rs
+index 84edcdd7d..745a6fe35 100644
+--- a/kernel/src/fs/utils/systree_inode.rs
++++ b/kernel/src/fs/utils/systree_inode.rs
+@@ -314,19 +314,25 @@ impl<KInode: SysTreeInodeTy + Send + Sync + 'static> Inode for KInode {
+         self.metadata().atime
+     }
+ 
+-    default fn set_atime(&self, _time: Duration) {}
++    default fn set_atime(&self, _time: Duration) -> Result<()> {
++        Ok(())
++    }
+ 
+     default fn mtime(&self) -> Duration {
+         self.metadata().mtime
+     }
+ 
+-    default fn set_mtime(&self, _time: Duration) {}
++    default fn set_mtime(&self, _time: Duration) -> Result<()> {
++        Ok(())
++    }
+ 
+     default fn ctime(&self) -> Duration {
+         self.metadata().ctime
+     }
+ 
+-    default fn set_ctime(&self, _time: Duration) {}
++    default fn set_ctime(&self, _time: Duration) -> Result<()> {
++        Ok(())
++    }
+ 
+     default fn owner(&self) -> Result<Uid> {
+         Ok(self.metadata().uid)
+diff --git a/kernel/src/net/socket/unix/ns/path.rs b/kernel/src/net/socket/unix/ns/path.rs
+index 740cf0d31..6d1d795ed 100644
+--- a/kernel/src/net/socket/unix/ns/path.rs
++++ b/kernel/src/net/socket/unix/ns/path.rs
+@@ -6,7 +6,7 @@ use crate::{
+     fs::{
+         fs_resolver::{split_path, FsPath},
+         path::Path,
+-        utils::{mkmod, InodeType, Permission},
++        utils::{mkmod, CheckPermission, InodeType, Permission},
+     },
+     prelude::*,
+ };
+@@ -20,13 +20,8 @@ pub fn lookup_socket_file(path: &str) -> Result<Path> {
+         fs.lookup(&fs_path)?
+     };
+ 
+-    if path
+-        .inode()
+-        .check_permission(Permission::MAY_READ | Permission::MAY_WRITE)
+-        .is_err()
+-    {
+-        return_errno_with_message!(Errno::EACCES, "the socket file cannot be read or written")
+-    }
++    current_thread!()
++        .check_permission(path.inode(), Permission::MAY_READ | Permission::MAY_WRITE)?;
+ 
+     if path.type_() != InodeType::Socket {
+         return_errno_with_message!(
+diff --git a/kernel/src/process/credentials/credentials_.rs b/kernel/src/process/credentials/credentials_.rs
+index 528e504d7..8e21078dc 100644
+--- a/kernel/src/process/credentials/credentials_.rs
++++ b/kernel/src/process/credentials/credentials_.rs
+@@ -74,10 +74,6 @@ impl Credentials_ {
+         }
+     }
+ 
+-    fn is_privileged(&self) -> bool {
+-        self.euid.is_root()
+-    }
+-
+     //  ******* Uid methods *******
+ 
+     pub(super) fn ruid(&self) -> Uid {
+@@ -96,43 +92,25 @@ impl Credentials_ {
+         self.fsuid.load(Ordering::Relaxed)
+     }
+ 
+-    pub(super) fn keep_capabilities(&self) -> bool {
+-        self.keep_capabilities.load(Ordering::Relaxed)
+-    }
+-
+-    pub(super) fn set_uid(&self, uid: Uid) {
+-        if self.is_privileged() {
++    pub(super) fn set_uid(&self, uid: Uid) -> Result<()> {
++        if self.effective_capset().contains(CapSet::SETUID) {
+             self.set_resuid_unchecked(Some(uid), Some(uid), Some(uid));
++            Ok(())
+         } else {
+-            // Unprivileged processes can only switch between ruid, euid, suid
+-            if uid != self.ruid.load(Ordering::Relaxed)
+-                && uid != self.euid.load(Ordering::Relaxed)
+-                && uid != self.suid.load(Ordering::Relaxed)
+-            {
+-                // No permission to set to this UID
+-                return;
+-            }
+-            self.set_resuid_unchecked(None, Some(uid), None)
++            self.set_resuid(None, Some(uid), None)
+         }
+-
+-        self.set_fsuid_unchecked(uid)
+     }
+ 
+     pub(super) fn set_reuid(&self, ruid: Option<Uid>, euid: Option<Uid>) -> Result<()> {
+         self.check_uid_perm(ruid.as_ref(), euid.as_ref(), None, false)?;
+ 
+         let should_set_suid = ruid.is_some() || euid.is_some_and(|euid| euid != self.ruid());
+-
+-        self.set_resuid_unchecked(ruid, euid, None);
+-
+-        if should_set_suid {
+-            self.suid.store(self.euid(), Ordering::Release);
+-        }
+-
+-        // FIXME: should we set fsuid here? The linux document for syscall `setfsuid` is contradictory
+-        // with the document of syscall `setreuid`. The `setfsuid` document says the `fsuid` is always
+-        // the same as `euid`, but `setreuid` does not mention the `fsuid` should be set.
+-        self.set_fsuid_unchecked(self.euid());
++        let suid = if should_set_suid {
++            Some(euid.unwrap_or_else(|| self.euid()))
++        } else {
++            None
++        };
++        self.set_resuid_unchecked(ruid, euid, suid);
+ 
+         Ok(())
+     }
+@@ -147,8 +125,6 @@ impl Credentials_ {
+ 
+         self.set_resuid_unchecked(ruid, euid, suid);
+ 
+-        self.set_fsuid_unchecked(self.euid());
+-
+         Ok(())
+     }
+ 
+@@ -159,8 +135,8 @@ impl Credentials_ {
+             return Ok(old_fsuid);
+         };
+ 
+-        if self.is_privileged() {
+-            self.fsuid.store(fsuid, Ordering::Release);
++        if self.effective_capset().contains(CapSet::SETUID) {
++            self.set_fsuid_unchecked(fsuid);
+             return Ok(old_fsuid);
+         }
+ 
+@@ -193,7 +169,7 @@ impl Credentials_ {
+         suid: Option<&Uid>,
+         ruid_may_be_old_suid: bool,
+     ) -> Result<()> {
+-        if self.is_privileged() {
++        if self.effective_capset().contains(CapSet::SETUID) {
+             return Ok(());
+         }
+ 
+@@ -259,38 +235,36 @@ impl Credentials_ {
+             old_suid
+         };
+ 
++        self.set_fsuid_unchecked(new_euid);
++
+         // Begin to adjust capabilities.
+         // Reference: The "Effect of user ID changes on capabilities" section in
+-        // https://man7.org/linux/man-pages/man7/capabilities.7.html
++        // <https://man7.org/linux/man-pages/man7/capabilities.7.html>.
++
+         let had_root = old_ruid.is_root() || old_euid.is_root() || old_suid.is_root();
+         let all_nonroot = !new_ruid.is_root() && !new_euid.is_root() && !new_suid.is_root();
++        if had_root && all_nonroot && !self.keep_capabilities() {
++            self.set_permitted_capset(CapSet::empty());
++            self.set_inheritable_capset(CapSet::empty());
++            // TODO: Clear ambient capabilities when we support it. Note that ambient capabilities
++            // should be cleared even if `keep_capabilities` is true.
++        }
+ 
+-        if had_root && all_nonroot {
+-            if !self.keep_capabilities() {
+-                self.set_permitted_capset(CapSet::empty());
+-                self.set_inheritable_capset(CapSet::empty());
+-                // TODO: Also need to clear ambient capabilities when we support it
+-            }
+-
++        if old_euid.is_root() && !new_euid.is_root() {
+             self.set_effective_capset(CapSet::empty());
+-        } else {
+-            if old_euid.is_root() && !new_euid.is_root() {
+-                self.set_effective_capset(CapSet::empty());
+-            }
+-
+-            if !old_euid.is_root() && new_euid.is_root() {
+-                let permitted = self.permitted_capset();
+-                self.set_effective_capset(permitted);
+-            }
++        } else if !old_euid.is_root() && new_euid.is_root() {
++            let permitted = self.permitted_capset();
++            self.set_effective_capset(permitted);
+         }
+     }
+ 
+     fn set_fsuid_unchecked(&self, fsuid: Uid) {
+-        let old_uid = self.fsuid.swap(fsuid, Ordering::Relaxed);
++        let old_fsuid = self.fsuid();
++        self.fsuid.store(fsuid, Ordering::Relaxed);
+ 
+-        if old_uid.is_root() && !fsuid.is_root() {
++        if old_fsuid.is_root() && !fsuid.is_root() {
+             // Reference: The "Effect of user ID changes on capabilities" section in
+-            // https://man7.org/linux/man-pages/man7/capabilities.7.html
++            // <https://man7.org/linux/man-pages/man7/capabilities.7.html>.
+             let cap_to_remove = CapSet::CHOWN
+                 | CapSet::DAC_OVERRIDE
+                 | CapSet::FOWNER
+@@ -322,15 +296,12 @@ impl Credentials_ {
+         self.fsgid.load(Ordering::Relaxed)
+     }
+ 
+-    pub(super) fn set_gid(&self, gid: Gid) {
+-        if self.is_privileged() {
+-            self.rgid.store(gid, Ordering::Relaxed);
+-            self.egid.store(gid, Ordering::Relaxed);
+-            self.sgid.store(gid, Ordering::Relaxed);
+-            self.fsgid.store(gid, Ordering::Relaxed);
++    pub(super) fn set_gid(&self, gid: Gid) -> Result<()> {
++        if self.effective_capset().contains(CapSet::SETGID) {
++            self.set_resgid_unchecked(Some(gid), Some(gid), Some(gid));
++            Ok(())
+         } else {
+-            self.egid.store(gid, Ordering::Relaxed);
+-            self.fsgid.store(gid, Ordering::Relaxed);
++            self.set_resgid(None, Some(gid), None)
+         }
+     }
+ 
+@@ -338,14 +309,12 @@ impl Credentials_ {
+         self.check_gid_perm(rgid.as_ref(), egid.as_ref(), None, false)?;
+ 
+         let should_set_sgid = rgid.is_some() || egid.is_some_and(|egid| egid != self.rgid());
+-
+-        self.set_resgid_unchecked(rgid, egid, None);
+-
+-        if should_set_sgid {
+-            self.sgid.store(self.egid(), Ordering::Relaxed);
+-        }
+-
+-        self.fsgid.store(self.egid(), Ordering::Relaxed);
++        let sgid = if should_set_sgid {
++            Some(egid.unwrap_or_else(|| self.egid()))
++        } else {
++            None
++        };
++        self.set_resgid_unchecked(rgid, egid, sgid);
+ 
+         Ok(())
+     }
+@@ -360,8 +329,6 @@ impl Credentials_ {
+ 
+         self.set_resgid_unchecked(rgid, egid, sgid);
+ 
+-        self.fsgid.store(self.egid(), Ordering::Relaxed);
+-
+         Ok(())
+     }
+ 
+@@ -372,8 +339,8 @@ impl Credentials_ {
+             return Ok(old_fsgid);
+         };
+ 
+-        if self.is_privileged() {
+-            self.fsgid.store(fsgid, Ordering::Relaxed);
++        if self.effective_capset().contains(CapSet::SETGID) {
++            self.set_fsgid_unchecked(fsgid);
+             return Ok(old_fsgid);
+         }
+ 
+@@ -384,22 +351,17 @@ impl Credentials_ {
+             )
+         }
+ 
+-        self.fsgid.store(fsgid, Ordering::Relaxed);
++        self.set_fsgid_unchecked(fsgid);
+ 
+         Ok(old_fsgid)
+     }
+ 
+     pub(super) fn set_egid(&self, egid: Gid) {
+-        self.egid.store(egid, Ordering::Relaxed);
++        self.set_resgid_unchecked(None, Some(egid), None);
+     }
+ 
+     pub(super) fn set_sgid(&self, sgid: Gid) {
+-        self.sgid.store(sgid, Ordering::Relaxed);
+-    }
+-
+-    pub(super) fn set_keep_capabilities(&self, keep_capabilities: bool) {
+-        self.keep_capabilities
+-            .store(keep_capabilities, Ordering::Relaxed);
++        self.set_resgid_unchecked(None, None, Some(sgid));
+     }
+ 
+     // For `setregid`, rgid can *NOT* be set to old sgid,
+@@ -411,7 +373,7 @@ impl Credentials_ {
+         sgid: Option<&Gid>,
+         rgid_may_be_old_sgid: bool,
+     ) -> Result<()> {
+-        if self.is_privileged() {
++        if self.effective_capset().contains(CapSet::SETGID) {
+             return Ok(());
+         }
+ 
+@@ -463,6 +425,12 @@ impl Credentials_ {
+         if let Some(sgid) = sgid {
+             self.sgid.store(sgid, Ordering::Relaxed);
+         }
++
++        self.set_fsgid_unchecked(self.egid());
++    }
++
++    fn set_fsgid_unchecked(&self, fsuid: Gid) {
++        self.fsgid.store(fsuid, Ordering::Relaxed);
+     }
+ 
+     //  ******* Supplementary groups methods *******
+@@ -503,6 +471,15 @@ impl Credentials_ {
+         self.effective_capset
+             .store(effective_capset, Ordering::Relaxed);
+     }
++
++    pub(super) fn keep_capabilities(&self) -> bool {
++        self.keep_capabilities.load(Ordering::Relaxed)
++    }
++
++    pub(super) fn set_keep_capabilities(&self, keep_capabilities: bool) {
++        self.keep_capabilities
++            .store(keep_capabilities, Ordering::Relaxed);
++    }
+ }
+ 
+ impl Clone for Credentials_ {
+diff --git a/kernel/src/process/credentials/static_cap.rs b/kernel/src/process/credentials/static_cap.rs
+index b79ed965f..fa9e158c9 100644
+--- a/kernel/src/process/credentials/static_cap.rs
++++ b/kernel/src/process/credentials/static_cap.rs
+@@ -77,21 +77,13 @@ impl<R: TRights> Credentials<R> {
+         self.0.fsuid()
+     }
+ 
+-    /// Gets keep capabilities flag.
+-    ///
+-    /// This method requires the `Read` right.
+-    #[require(R > Read)]
+-    pub fn keep_capabilities(&self) -> bool {
+-        self.0.keep_capabilities()
+-    }
+-
+     /// Sets uid. If self is privileged, sets the effective, real, saved-set user ids as `uid`,
+     /// Otherwise, sets effective user id as `uid`.
+     ///
+     /// This method requires the `Write` right.
+     #[require(R > Write)]
+-    pub fn set_uid(&self, uid: Uid) {
+-        self.0.set_uid(uid);
++    pub fn set_uid(&self, uid: Uid) -> Result<()> {
++        self.0.set_uid(uid)
+     }
+ 
+     /// Sets real, effective user ids as `ruid`, `euid` respectively. if `ruid` or `euid`
+@@ -145,14 +137,6 @@ impl<R: TRights> Credentials<R> {
+         self.0.set_suid(euid);
+     }
+ 
+-    /// Sets keep capabilities flag.
+-    ///
+-    /// This method requires the `Write` right.
+-    #[require(R > Write)]
+-    pub fn set_keep_capabilities(&self, keep_capabilities: bool) {
+-        self.0.set_keep_capabilities(keep_capabilities);
+-    }
+-
+     // *********** Gid methods **********
+ 
+     /// Gets real group id.
+@@ -192,8 +176,8 @@ impl<R: TRights> Credentials<R> {
+     ///
+     /// This method requires the `Write` right.
+     #[require(R > Write)]
+-    pub fn set_gid(&self, gid: Gid) {
+-        self.0.set_gid(gid);
++    pub fn set_gid(&self, gid: Gid) -> Result<()> {
++        self.0.set_gid(gid)
+     }
+ 
+     /// Sets real, effective group ids as `rgid`, `egid` respectively. if `rgid` or `egid`
+@@ -314,4 +298,20 @@ impl<R: TRights> Credentials<R> {
+     pub fn set_effective_capset(&self, effective_capset: CapSet) {
+         self.0.set_effective_capset(effective_capset);
+     }
++
++    /// Gets keep capabilities flag.
++    ///
++    /// This method requires the `Read` right.
++    #[require(R > Read)]
++    pub fn keep_capabilities(&self) -> bool {
++        self.0.keep_capabilities()
++    }
++
++    /// Sets keep capabilities flag.
++    ///
++    /// This method requires the `Write` right.
++    #[require(R > Write)]
++    pub fn set_keep_capabilities(&self, keep_capabilities: bool) {
++        self.0.set_keep_capabilities(keep_capabilities);
++    }
+ }
+diff --git a/kernel/src/process/credentials/user.rs b/kernel/src/process/credentials/user.rs
+index 613952154..809da2495 100644
+--- a/kernel/src/process/credentials/user.rs
++++ b/kernel/src/process/credentials/user.rs
+@@ -56,14 +56,8 @@ define_atomic_version_of_integer_like_type!(Uid, {
+     pub(super) struct AtomicUid(AtomicU32);
+ });
+ 
+-impl AtomicUid {
+-    pub fn is_root(&self) -> bool {
+-        self.load(Ordering::Acquire).is_root()
+-    }
+-}
+-
+ impl Clone for AtomicUid {
+     fn clone(&self) -> Self {
+-        Self::new(self.load(Ordering::Acquire))
++        Self::new(self.load(Ordering::Relaxed))
+     }
+ }
+diff --git a/kernel/src/process/program_loader/mod.rs b/kernel/src/process/program_loader/mod.rs
+index 6490b9f2e..4eba8ab3d 100644
+--- a/kernel/src/process/program_loader/mod.rs
++++ b/kernel/src/process/program_loader/mod.rs
+@@ -12,7 +12,7 @@ use crate::{
+     fs::{
+         fs_resolver::{FsPath, FsResolver, AT_FDCWD},
+         path::Path,
+-        utils::{InodeType, Permission},
++        utils::{CheckPermission, InodeType, Permission},
+     },
+     prelude::*,
+ };
+@@ -116,9 +116,5 @@ pub fn check_executable_file(path: &Path) -> Result<()> {
+         return_errno_with_message!(Errno::EACCES, "the path is not a regular file");
+     }
+ 
+-    if path.inode().check_permission(Permission::MAY_EXEC).is_err() {
+-        return_errno_with_message!(Errno::EACCES, "the path is not executable");
+-    }
+-
+-    Ok(())
++    current_thread!().check_permission_strict(path.inode(), Permission::MAY_EXEC)
+ }
+diff --git a/kernel/src/syscall/access.rs b/kernel/src/syscall/access.rs
+index a9d744e82..02024259b 100644
+--- a/kernel/src/syscall/access.rs
++++ b/kernel/src/syscall/access.rs
+@@ -5,7 +5,7 @@ use crate::{
+     fs::{
+         file_table::FileDesc,
+         fs_resolver::{FsPath, AT_FDCWD},
+-        utils::{Permission, PATH_MAX},
++        utils::{CheckPermission, Permission, PATH_MAX},
+     },
+     prelude::*,
+ };
+@@ -97,25 +97,23 @@ pub fn do_faccessat(
+         }
+     };
+ 
+-    // AccessMode::empty() means F_OK and no more permission check needed.
++    // `AccessMode::empty` means `F_OK`. So no more permission checks are needed.
+     if mode.is_empty() {
+         return Ok(SyscallReturn::Return(0));
+     }
+ 
+-    let inode = path.inode();
+-
+-    // FIXME: The current implementation is dummy
++    let mut permission = Permission::empty();
+     if mode.contains(AccessMode::R_OK) {
+-        inode.check_permission(Permission::MAY_READ)?;
++        permission |= Permission::MAY_READ;
+     }
+-
+     if mode.contains(AccessMode::W_OK) {
+-        inode.check_permission(Permission::MAY_WRITE)?;
++        permission |= Permission::MAY_WRITE;
+     }
+-
+     if mode.contains(AccessMode::X_OK) {
+-        inode.check_permission(Permission::MAY_EXEC)?;
++        permission |= Permission::MAY_EXEC;
+     }
++    ctx.posix_thread
++        .check_permission(path.inode(), permission)?;
+ 
+     Ok(SyscallReturn::Return(0))
+ }
+diff --git a/kernel/src/syscall/setgid.rs b/kernel/src/syscall/setgid.rs
+index 03ca2239c..e8091c2ad 100644
+--- a/kernel/src/syscall/setgid.rs
++++ b/kernel/src/syscall/setgid.rs
+@@ -13,7 +13,7 @@ pub fn sys_setgid(gid: i32, ctx: &Context) -> Result<SyscallReturn> {
+     let gid = Gid::new(gid as u32);
+ 
+     let credentials = ctx.posix_thread.credentials_mut();
+-    credentials.set_gid(gid);
++    credentials.set_gid(gid)?;
+ 
+     Ok(SyscallReturn::Return(0))
+ }
+diff --git a/kernel/src/syscall/setuid.rs b/kernel/src/syscall/setuid.rs
+index dfc16f6f9..85041e2ca 100644
+--- a/kernel/src/syscall/setuid.rs
++++ b/kernel/src/syscall/setuid.rs
+@@ -13,7 +13,7 @@ pub fn sys_setuid(uid: i32, ctx: &Context) -> Result<SyscallReturn> {
+     let uid = Uid::new(uid as u32);
+ 
+     let credentials = ctx.posix_thread.credentials_mut();
+-    credentials.set_uid(uid);
++    credentials.set_uid(uid)?;
+ 
+     Ok(SyscallReturn::Return(0))
+ }
+diff --git a/kernel/src/syscall/utimens.rs b/kernel/src/syscall/utimens.rs
+index b25fb4390..dcb41726f 100644
+--- a/kernel/src/syscall/utimens.rs
++++ b/kernel/src/syscall/utimens.rs
+@@ -139,9 +139,9 @@ fn vfs_utimes(path: &Path, times: Option<TimeSpecPair>) -> Result<SyscallReturn>
+     };
+ 
+     // Update times
+-    path.set_atime(atime);
+-    path.set_mtime(mtime);
+-    path.set_ctime(ctime);
++    path.set_atime(atime)?;
++    path.set_mtime(mtime)?;
++    path.set_ctime(ctime)?;
+ 
+     Ok(SyscallReturn::Return(0))
+ }
+-- 
+2.51.0
+

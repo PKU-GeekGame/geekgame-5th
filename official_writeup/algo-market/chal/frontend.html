@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易监控</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #00d4ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 8px 12px;
+            background: #3d3d3d;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #00d4ff;
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: #00a8cc;
+        }
+
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #cc3333;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+
+        .panel h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .price-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .current-price {
+            font-size: 3em;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .price-change {
+            font-size: 1.2em;
+            color: #888;
+        }
+
+        .price-change.positive {
+            color: #00ff88;
+        }
+
+        .price-change.negative {
+            color: #ff4444;
+        }
+
+        #priceChart {
+            width: 100%;
+            height: 300px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+
+        .order-book {
+            display: flex;
+            gap: 20px;
+        }
+
+        .order-section {
+            flex: 1;
+        }
+
+        .order-section h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .header-summary {
+            color: #00d4ff;
+        }
+
+        .order-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 10px;
+            background: #1a1a1a;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .buy-order {
+            color: #00ff88;
+        }
+
+        .sell-order {
+            color: #ff4444;
+        }
+
+        .trades-panel {
+            margin-top: 20px;
+        }
+
+        .status-bar {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .status-label {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .connection-status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .connection-status.connected {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .connection-status.disconnected {
+            background: #ff4444;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+        }
+
+        .error {
+            background: #ff4444;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success {
+            background: #00ff88;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        /* Tick选择按钮样式 */
+        .tick-btn {
+            padding: 6px 12px;
+            background: #3d3d3d;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #ccc;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 40px;
+        }
+
+        .tick-btn:hover {
+            background: #4d4d4d;
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .tick-btn.active {
+            background: #00d4ff;
+            border-color: #00d4ff;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .chart-controls {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .user-trade-panel {
+            margin-top: 0px;
+        }
+
+        .user-trade-grid {
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .user-trade-grid.single-column {
+            grid-template-columns: 1fr;
+        }
+
+        .user-order-form {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .user-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .user-input-group label {
+            color: #99d7ff;
+            font-size: 0.85em;
+        }
+
+        .order-settings-row input[type="number"],
+        .order-settings-row input[type="text"],
+        .order-side-controls input {
+            padding: 8px 12px;
+            background: #1b1f24;
+            border: 1px solid #29607a;
+            border-radius: 6px;
+            color: #fff;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tif-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .preset-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid #29607a;
+            background: #1b1f24;
+            color: #99d7ff;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        .preset-btn.active {
+            background: #00d4ff;
+            color: #000;
+            border-color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .user-action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .user-orders-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .user-orders-section h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-orders-scroll {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .user-orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .user-orders-table thead {
+            background: rgba(0, 212, 255, 0.12);
+        }
+
+        .user-orders-table th,
+        .user-orders-table td {
+            padding: 8px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+
+        .user-orders-table tbody tr:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .user-orders-empty {
+            text-align: center;
+            color: #777;
+            padding: 10px 0;
+        }
+
+        .user-message {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+
+        .user-message.success {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .user-message.error {
+            background: rgba(255, 68, 68, 0.15);
+            color: #ff8a8a;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+
+        .user-orders-table button {
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #ff6666;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+
+        .user-orders-table button:hover {
+            background: #ff4444;
+        }
+
+        .mid-price-display {
+            font-size: 0.9em;
+            color: #99d7ff;
+        }
+
+        @media (max-width: 1024px) {
+            .user-trade-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 交易监控</h1>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="tick-buttons update-speed-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="tick-btn" data-speed="0.5" onclick="updateSpeed('0.5')">0.2x</button>
+                    <button type="button" class="tick-btn" data-speed="0.2" onclick="updateSpeed('0.2')">0.5x</button>
+                    <button type="button" class="tick-btn active" data-speed="0.1"
+                        onclick="updateSpeed('0.1')">1x</button>
+                    <button type="button" class="tick-btn" data-speed="0.05" onclick="updateSpeed('0.05')">2x</button>
+                    <button type="button" class="tick-btn" data-speed="0.02" onclick="updateSpeed('0.02')">5x</button>
+                    <button type="button" class="tick-btn" data-speed="0.01" onclick="updateSpeed('0.01')">10x</button>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="startSimulationBtn" onclick="startSimulation()">开盘</button>
+            <button class="btn btn-danger" id="killSimulationBtn" onclick="killSimulation()">重开</button>
+            <button class="btn btn-primary" id="sendTruthBtn1" onclick="sendTruth(1.0)">发送 Truth 👍</button>
+            <button class="btn btn-danger" id="sendTruthBtn2" onclick="sendTruth(-1.0)">发送 Truth 👎</button>
+            <span id="truthRemain" style="margin-left: 10px;">剩余 Truth: 10</span>
+
+
+            <div style="margin-left:auto; display:flex; gap:12px; align-items:center; justify-content:flex-end;">
+                <button class="btn btn-primary" id="getFlagBtn" onclick="getFlag()">获取 Flag</button>
+                <div>Tick: <span id="currentTick">0</span>/<span id="closeTick">0</span></div>
+                <div class="status-value connection-status disconnected" id="connectionStatus">未连接</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="panel">
+                <h3>📈 价格走势</h3>
+                <div class="price-display">
+                    <div class="current-price" id="currentPrice">$100.00</div>
+                    <div class="price-change" id="priceChange">等待数据...</div>
+                </div>
+                <canvas id="priceChart"></canvas>
+
+                <!-- Tick数量选择按钮 -->
+                <div class="chart-controls" style="margin-top: 15px; text-align: center;">
+                    <div class="tick-buttons"
+                        style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        <button class="tick-btn" onclick="setTickCount(100, event)">100</button>
+                        <button class="tick-btn" onclick="setTickCount(200, event)">200</button>
+                        <button class="tick-btn" onclick="setTickCount(500, event)">500</button>
+                        <button class="tick-btn" onclick="setTickCount(1000, event)">1000</button>
+                        <button class="tick-btn" onclick="setTickCount(3000, event)">3000</button>
+                        <button class="tick-btn" onclick="setTickCount(9000, event)">全部</button>
+                    </div>
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-item">
+                        <div class="status-label">买一价</div>
+                        <div class="status-value" id="bestBuyPrice">$0.00</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">中间价</div>
+                        <div class="status-value" id="latestMidPriceDisplay">$0.00</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">卖一价</div>
+                        <div class="status-value" id="bestSellPrice">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel user-trade-panel">
+                <h3>💻 交易</h3>
+                <div class="user-trade-grid" id="userTradeGrid">
+                    <div class="mid-price-display" id="userPortfolioInfo">全部资金：-- 可用：-- ｜ 全部股票：-- 可用：-- | 总资产：--
+                    </div>
+                    <div class="user-order-form">
+                        <div class="order-settings">
+                            <div class="order-settings-row"
+                                style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                                <label for="limitPriceInput" style="min-width: 30px; color: #99d7ff;">价格</label>
+                                <input type="number" id="limitPriceInput" min="0" step="0.01" placeholder="手动输入限价"
+                                    style="flex: 0 1 160px; max-width: 160px;">
+                                <div class="preset-buttons" id="pricePresetButtons"
+                                    style="flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end;">
+                                    <button type="button" class="preset-btn active"
+                                        onclick="selectPricePreset(null, this)">手动</button>
+                                    <button type="button" class="preset-btn"
+                                        onclick="selectPricePreset(-0.03, this)">-3%</button>
+                                    <button type="button" class="preset-btn"
+                                        onclick="selectPricePreset(-0.01, this)">-1%</button>
+                                    <button type="button" class="preset-btn"
+                                        onclick="selectPricePreset(0, this)">中间价</button>
+                                    <button type="button" class="preset-btn"
+                                        onclick="selectPricePreset(0.01, this)">+1%</button>
+                                    <button type="button" class="preset-btn"
+                                        onclick="selectPricePreset(0.03, this)">+3%</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="order-settings-row"
+                            style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 12px;">
+                            <label style="min-width: 48px; color: #99d7ff;">有效期</label>
+                            <div class="tif-buttons" id="tifButtons"
+                                style="flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 8px;">
+                                <button type="button" class="preset-btn active" data-tif="GTC"
+                                    onclick="selectTimeInForce('GTC', this)">一直有效 (GTC)</button>
+                                <button type="button" class="preset-btn" data-tif="IOC"
+                                    onclick="selectTimeInForce('IOC', this)">立即成交 (IOC)</button>
+                                <button type="button" class="preset-btn" data-tif="CUSTOM"
+                                    onclick="selectTimeInForce('CUSTOM', this)">自定义</button>
+                                <div class="user-input-group" id="validTicksGroup" style="display: none; margin: 0;">
+                                    <input type="number" id="orderValidTicks" min="1" step="1"
+                                        placeholder="如 5 表示 5 tick 后过期">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="order-sides"
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 16px;">
+                            <div class="order-side order-side-buy"
+                                style="display: flex; flex-direction: column; gap: 12px; background: rgba(0, 212, 0, 0.08); border: 1px solid rgba(0, 212, 0, 0.2); border-radius: 8px; padding: 14px;">
+                                <div style="font-weight: 600; color: #00ff88;">买入</div>
+                                <div class="order-side-slider">
+                                    <input type="range" id="buyQuantitySlider" min="0" max="100" step="1" value="0"
+                                        style="width: 100%;">
+                                </div>
+                                <div class="order-side-controls" style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="number" id="buyOrderQuantity" min="1" step="1" style="flex: 1 1 auto;"
+                                        placeholder="数量">
+                                    <button class="btn btn-primary" type="button"
+                                        onclick="placeUserOrder('buy')">下单</button>
+                                </div>
+                            </div>
+                            <div class="order-side order-side-sell"
+                                style="display: flex; flex-direction: column; gap: 12px; background: rgba(255, 68, 68, 0.08); border: 1px solid rgba(255, 68, 68, 0.2); border-radius: 8px; padding: 14px;">
+                                <div style="font-weight: 600; color: #ff8a8a;">卖出</div>
+                                <div class="order-side-slider">
+                                    <input type="range" id="sellQuantitySlider" min="0" max="100" step="1" value="0"
+                                        style="width: 100%;">
+                                </div>
+                                <div class="order-side-controls" style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="number" id="sellOrderQuantity" min="1" step="1" style="flex: 1 1 auto;"
+                                        placeholder="数量">
+                                    <button class="btn btn-danger" type="button"
+                                        onclick="placeUserOrder('sell')">下单</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-orders-view">
+                    <div class="user-orders-section">
+                        <h4>当前委托</h4>
+                        <div class="user-orders-scroll">
+                            <table class="user-orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>订单ID</th>
+                                        <th>方向</th>
+                                        <th>限价</th>
+                                        <th>剩余</th>
+                                        <th>已成交</th>
+                                        <th>有效Tick</th>
+                                        <th>剩余Tick</th>
+                                        <th>状态</th>
+                                        <th>创建Tick</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="openOrdersBody">
+                                    <tr>
+                                        <td colspan="11" class="user-orders-empty">暂无委托</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="userOrderMessage" class="user-message" style="display:none; margin-top: 12px;"></div>
+            </div>
+        </div>
+        <div class="panel">
+            <details>
+                <summary class="header-summary">📋 订单</summary>
+                <div class="order-book">
+                    <div class="order-section">
+                        <h4>买入订单</h4>
+                        <div class="order-list" id="buyOrders">
+                            <div class="loading">等待订单数据...</div>
+                        </div>
+                    </div>
+                    <div class="order-section">
+                        <h4>卖出订单</h4>
+                        <div class="order-list" id="sellOrders">
+                            <div class="loading">等待订单数据...</div>
+                        </div>
+                    </div>
+                    <div class="order-section">
+                        <h4>最近成交</h4>
+                        <div class="order-list" id="tradesList">
+                            <div class="loading">等待成交数据...</div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+        <div class="panel" style="margin-top: 15px;">
+            <details>
+                <summary class="header-summary">💻 历史委托</summary>
+                <div class="user-orders-section">
+                    <div class="user-orders-scroll">
+                        <table class="user-orders-table">
+                            <thead>
+                                <tr>
+                                    <th>订单ID</th>
+                                    <th>方向</th>
+                                    <th>限价</th>
+                                    <th>数量</th>
+                                    <th>已成交</th>
+                                    <th>TIF</th>
+                                    <th>有效Tick</th>
+                                    <th>状态</th>
+                                    <th>创建Tick</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allOrdersBody">
+                                <tr>
+                                    <td colspan="9" class="user-orders-empty">暂无订单记录</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let priceHistory = [];
+        let chart = null;
+        let chartCtx = null;
+        let maxDataPoints = 100;
+        let previousPrice = 100.0;
+        let currentTickCount = 100; // 当前显示的tick数量
+
+        let allTrades = []; // 用于存储所有成交记录
+        let latestMidPrice = null;
+        let selectedPricePreset = null;
+        let presetButtons = [];
+        let tifButtons = [];
+        let selectedTimeInForce = 'GTC';
+        let userOrdersState = { open: [], all: [], current_tick: null };
+        let userOrderMessageTimer = null;
+        let updateSpeedButtons = [];
+        let selectedTickDuration = '0.1';
+        let latestPortfolio = null;
+        let lastBuyQuantitySource = 'input';
+        let lastSellQuantitySource = 'input';
+        let lastBuyRatio = 0;
+        let lastSellRatio = 0;
+        let buyControlUpdateLock = false;
+        let sellControlUpdateLock = false;
+
+        // 设置Tick数量
+        function setTickCount(count, event) {
+            // 更新当前tick数量
+            currentTickCount = count;
+
+            // 更新按钮状态
+            const buttons = document.querySelectorAll('.chart-controls .tick-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // 设置当前按钮为active
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+
+            // 重新绘制图表
+            drawChart();
+        }
+
+        // 初始化图表
+        function initChart() {
+            const canvas = document.getElementById('priceChart');
+            chartCtx = canvas.getContext('2d');
+
+            // 设置canvas尺寸
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            drawChart();
+        }
+
+        // 绘制价格图表
+        function drawChart() {
+            if (!chartCtx || priceHistory.length === 0) return;
+
+            const canvas = chartCtx.canvas;
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+
+            // 清空画布
+            chartCtx.clearRect(0, 0, width, height);
+
+            // 计算价格范围 - 使用动态tick数量
+            const prices = priceHistory.slice(-currentTickCount);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice || 1;
+
+            // 绘制网格
+            chartCtx.strokeStyle = '#444';
+            chartCtx.lineWidth = 1;
+
+            // 水平网格线
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (height - 2 * padding) * i / 5;
+                chartCtx.beginPath();
+                chartCtx.moveTo(padding, y);
+                chartCtx.lineTo(width - padding, y);
+                chartCtx.stroke();
+
+                // 价格标签
+                const price = maxPrice - priceRange * i / 5;
+                chartCtx.fillStyle = '#888';
+                chartCtx.font = '12px Arial';
+                chartCtx.textAlign = 'right';
+                chartCtx.fillText(`$${price.toFixed(2)}`, padding - 5, y + 4);
+            }
+
+            // 绘制价格线
+            if (prices.length > 1) {
+                chartCtx.strokeStyle = '#00d4ff';
+                chartCtx.lineWidth = 2;
+                chartCtx.beginPath();
+
+                for (let i = 0; i < prices.length; i++) {
+                    const x = padding + (width - 2 * padding) * i / (prices.length - 1);
+                    const y = padding + (height - 2 * padding) * (maxPrice - prices[i]) / priceRange;
+
+                    if (i === 0) {
+                        chartCtx.moveTo(x, y);
+                    } else {
+                        chartCtx.lineTo(x, y);
+                    }
+                }
+
+                chartCtx.stroke();
+            }
+
+            // 绘制最新价格点
+            if (prices.length > 0) {
+                const lastPrice = prices[prices.length - 1];
+                const lastX = width - padding;
+                const lastY = padding + (height - 2 * padding) * (maxPrice - lastPrice) / priceRange;
+
+                chartCtx.fillStyle = '#00ff88';
+                chartCtx.beginPath();
+                chartCtx.arc(lastX, lastY, 4, 0, 2 * Math.PI);
+                chartCtx.fill();
+            }
+        }
+
+        // 更新价格显示
+        function updatePriceDisplay(price) {
+            document.getElementById('currentPrice').textContent = `$${price.toFixed(2)}`;
+
+            const change = price - previousPrice;
+            const changePercent = (change / previousPrice) * 100;
+            const changeElement = document.getElementById('priceChange');
+
+            if (change > 0) {
+                changeElement.textContent = `+${change.toFixed(2)} (+${changePercent.toFixed(2)}%)`;
+                changeElement.className = 'price-change positive';
+            } else if (change < 0) {
+                changeElement.textContent = `${change.toFixed(2)} (${changePercent.toFixed(2)}%)`;
+                changeElement.className = 'price-change negative';
+            } else {
+                changeElement.textContent = '0.00 (0.00%)';
+                changeElement.className = 'price-change';
+            }
+
+            previousPrice = price;
+        }
+
+        // 更新订单簿
+        function updateOrderBook(buyOrders, sellOrders) {
+            const buyOrdersDiv = document.getElementById('buyOrders');
+            const sellOrdersDiv = document.getElementById('sellOrders');
+
+            // 更新买入订单
+            if (buyOrders.length > 0) {
+                buyOrdersDiv.innerHTML = buyOrders
+                    .sort((a, b) => b.price - a.price) // 高价优先
+                    .slice(0, 10) // 只显示前10个
+                    .map(order => `
+                        <div class="order-item buy-order">
+                            <span>${order.quantity} @ $${order.price.toFixed(2)}</span>
+                        </div>
+                    `).join('');
+            } else {
+                buyOrdersDiv.innerHTML = '<div class="loading">暂无买入订单</div>';
+            }
+
+            // 更新卖出订单
+            if (sellOrders.length > 0) {
+                sellOrdersDiv.innerHTML = sellOrders
+                    .sort((a, b) => a.price - b.price) // 低价优先
+                    .slice(0, 10) // 只显示前10个
+                    .map(order => `
+                        <div class="order-item sell-order">
+                            <span>${order.quantity} @ $${order.price.toFixed(2)}</span>
+                        </div>
+                    `).join('');
+            } else {
+                sellOrdersDiv.innerHTML = '<div class="loading">暂无卖出订单</div>';
+            }
+        }
+
+        // 更新成交记录
+        function updateTrades(trades) {
+            const tradesDiv = document.getElementById('tradesList');
+            allTrades.push(...trades); // 将新成交记录添加到总记录中
+            if (allTrades.length > 0) {
+                tradesDiv.innerHTML = allTrades
+                    .slice(-10) // 只显示最近10笔
+                    .reverse()
+                    .map(trade => `
+                        <div class="order-item ${trade.taker === 1 ? 'buy-order' : 'sell-order'}">
+                            <span>${trade.taker === 1 ? '买入' : '卖出'}</span>
+                            <span>${trade.quantity} @ $${trade.price.toFixed(2)}</span>
+                            <span>(${trade.tick})</span>
+                        </div>
+                    `).join('');
+            } else {
+                tradesDiv.innerHTML = '<div class="loading">暂无成交记录</div>';
+            }
+        }
+
+        // 更新状态栏
+        function updateStatus(data) {
+            document.getElementById('currentTick').textContent = data.tick;
+            document.getElementById('bestBuyPrice').textContent = `$${data.best_buy_price.toFixed(2)}`;
+            document.getElementById('bestSellPrice').textContent = `$${data.best_sell_price.toFixed(2)}`;
+        }
+
+        function formatPrice(value, digits = 2) {
+            const num = Number(value);
+            if (!Number.isFinite(num)) {
+                return '--';
+            }
+            return num.toFixed(digits);
+        }
+
+        function updateMidPriceDisplay() {
+            const el = document.getElementById('latestMidPriceDisplay');
+            if (!el) return;
+            if (latestMidPrice === null || !Number.isFinite(latestMidPrice) || latestMidPrice <= 0) {
+                el.textContent = '--';
+            } else {
+                el.textContent = `$${formatPrice(latestMidPrice)}`;
+            }
+        }
+
+        function updatePresetButtonStyles(activeButton) {
+            if (!presetButtons || presetButtons.length === 0) return;
+            presetButtons.forEach(btn => {
+                btn.classList.toggle('active', btn === activeButton);
+            });
+        }
+
+        function selectPricePreset(offset, button) {
+            if (offset === null || offset === undefined) {
+                selectedPricePreset = null;
+            } else {
+                selectedPricePreset = Number(offset);
+            }
+
+            if (button) {
+                updatePresetButtonStyles(button);
+            }
+
+            const priceInput = document.getElementById('limitPriceInput');
+            if (priceInput) {
+                if (selectedPricePreset !== null) {
+                    priceInput.value = '';
+                    priceInput.placeholder = '自动使用中间价限价';
+                } else {
+                    priceInput.placeholder = '手动输入限价';
+                }
+            }
+
+            handlePriceReferenceChanged();
+        }
+
+        function selectTimeInForce(tif, button) {
+            const normalizedTif = (tif || 'GTC').toUpperCase();
+            selectedTimeInForce = normalizedTif;
+
+            if (!tifButtons || tifButtons.length === 0) {
+                tifButtons = Array.from(document.querySelectorAll('#tifButtons .preset-btn'));
+            }
+
+            tifButtons.forEach(btn => {
+                const btnTif = (btn.dataset.tif || '').toUpperCase();
+                const isActive = button ? btn === button : btnTif === normalizedTif;
+                btn.classList.toggle('active', isActive);
+            });
+
+            const validGroup = document.getElementById('validTicksGroup');
+            const validInput = document.getElementById('orderValidTicks');
+            if (validGroup) {
+                if (normalizedTif === 'CUSTOM') {
+                    validGroup.style.display = 'flex';
+                } else {
+                    validGroup.style.display = 'none';
+                    if (validInput) {
+                        validInput.value = '';
+                    }
+                }
+            }
+        }
+
+        function showUserOrderMessage(type, text) {
+            const messageEl = document.getElementById('userOrderMessage');
+            if (!messageEl) return;
+            messageEl.textContent = text;
+            messageEl.className = `user-message ${type}`;
+            messageEl.style.display = 'block';
+            if (userOrderMessageTimer) {
+                clearTimeout(userOrderMessageTimer);
+            }
+            userOrderMessageTimer = setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 4000);
+        }
+
+        function clamp(value, min, max) {
+            if (!Number.isFinite(value)) {
+                return min;
+            }
+            return Math.max(min, Math.min(max, value));
+        }
+
+        function clampRatio(value) {
+            return clamp(value, 0, 1);
+        }
+
+        function getEffectiveLimitPrice() {
+            if (selectedPricePreset !== null) {
+                if (Number.isFinite(latestMidPrice) && latestMidPrice > 0) {
+                    return latestMidPrice * (1 + selectedPricePreset);
+                }
+                return null;
+            }
+
+            const priceInput = document.getElementById('limitPriceInput');
+            if (priceInput) {
+                const manualPrice = parseFloat(priceInput.value);
+                if (Number.isFinite(manualPrice) && manualPrice > 0) {
+                    return manualPrice;
+                }
+            }
+
+            if (Number.isFinite(latestMidPrice) && latestMidPrice > 0) {
+                return latestMidPrice;
+            }
+            return null;
+        }
+
+        function getCashAvailable() {
+            if (!latestPortfolio) {
+                return 0;
+            }
+            const value = parseFloat(latestPortfolio.cash_available);
+            return Number.isFinite(value) && value > 0 ? value : 0;
+        }
+
+        function getStockAvailable() {
+            if (!latestPortfolio) {
+                return 0;
+            }
+            const value = parseFloat(latestPortfolio.stock_available);
+            return Number.isFinite(value) && value > 0 ? value : 0;
+        }
+
+        function computeBuyQuantityFromRatio(ratio, price) {
+            const cashAvailable = getCashAvailable();
+            if (!Number.isFinite(price) || price <= 0 || cashAvailable <= 0) {
+                return 0;
+            }
+            const normalizedRatio = clampRatio(ratio);
+            const maxQuantity = Math.floor(cashAvailable / price);
+            if (maxQuantity <= 0) {
+                return 0;
+            }
+            const quantityFromRatio = Math.floor((cashAvailable * normalizedRatio) / price);
+            return clamp(quantityFromRatio, 0, maxQuantity);
+        }
+
+        function computeBuyRatioFromQuantity(quantity, price) {
+            const cashAvailable = getCashAvailable();
+            if (!Number.isFinite(price) || price <= 0 || cashAvailable <= 0) {
+                return 0;
+            }
+            const normalizedQuantity = Math.max(0, Math.floor(quantity));
+            if (normalizedQuantity === 0) {
+                return 0;
+            }
+            const ratio = (normalizedQuantity * price) / cashAvailable;
+            return clampRatio(ratio);
+        }
+
+        function computeSellQuantityFromRatio(ratio) {
+            const stockAvailable = getStockAvailable();
+            if (stockAvailable <= 0) {
+                return 0;
+            }
+            const normalizedRatio = clampRatio(ratio);
+            const quantityFromRatio = Math.floor(stockAvailable * normalizedRatio);
+            return clamp(quantityFromRatio, 0, Math.floor(stockAvailable));
+        }
+
+        function computeSellRatioFromQuantity(quantity) {
+            const stockAvailable = getStockAvailable();
+            if (stockAvailable <= 0) {
+                return 0;
+            }
+            const normalizedQuantity = Math.max(0, Math.floor(quantity));
+            if (normalizedQuantity === 0) {
+                return 0;
+            }
+            const ratio = normalizedQuantity / stockAvailable;
+            return clampRatio(ratio);
+        }
+
+        function handleBuySliderInput(event) {
+            if (buyControlUpdateLock) {
+                return;
+            }
+
+            const slider = event?.target || document.getElementById('buyQuantitySlider');
+            const input = document.getElementById('buyOrderQuantity');
+            if (!slider || !input) {
+                return;
+            }
+
+            buyControlUpdateLock = true;
+            const ratio = clampRatio(parseFloat(slider.value) / 100);
+            const price = getEffectiveLimitPrice();
+            const quantity = computeBuyQuantityFromRatio(ratio, price);
+
+            slider.value = Math.round(ratio * 100);
+            input.value = quantity > 0 ? quantity : '';
+
+            lastBuyRatio = ratio;
+            lastBuyQuantitySource = 'slider';
+            buyControlUpdateLock = false;
+        }
+
+        function handleBuyQuantityInputChange() {
+            if (buyControlUpdateLock) {
+                return;
+            }
+
+            const input = document.getElementById('buyOrderQuantity');
+            const slider = document.getElementById('buyQuantitySlider');
+            if (!input || !slider) {
+                return;
+            }
+
+            buyControlUpdateLock = true;
+
+            let quantity = parseInt(input.value, 10);
+            if (!Number.isInteger(quantity) || quantity < 0) {
+                quantity = 0;
+            }
+
+            const price = getEffectiveLimitPrice();
+            const cashAvailable = getCashAvailable();
+            if (Number.isFinite(price) && price > 0 && cashAvailable > 0) {
+                const maxQuantity = Math.floor(cashAvailable / price);
+                quantity = clamp(quantity, 0, maxQuantity);
+            } else {
+                quantity = Math.max(0, quantity);
+            }
+
+            input.value = quantity > 0 ? quantity : '';
+
+            const ratio = computeBuyRatioFromQuantity(quantity, price);
+            slider.value = Math.round(ratio * 100);
+            lastBuyRatio = ratio;
+            lastBuyQuantitySource = 'input';
+
+            buyControlUpdateLock = false;
+        }
+
+        function handleSellSliderInput(event) {
+            if (sellControlUpdateLock) {
+                return;
+            }
+
+            const slider = event?.target || document.getElementById('sellQuantitySlider');
+            const input = document.getElementById('sellOrderQuantity');
+            if (!slider || !input) {
+                return;
+            }
+
+            sellControlUpdateLock = true;
+
+            const ratio = clampRatio(parseFloat(slider.value) / 100);
+            const quantity = computeSellQuantityFromRatio(ratio);
+
+            slider.value = Math.round(ratio * 100);
+            input.value = quantity > 0 ? quantity : '';
+
+            lastSellRatio = ratio;
+            lastSellQuantitySource = 'slider';
+
+            sellControlUpdateLock = false;
+        }
+
+        function handleSellQuantityInputChange() {
+            if (sellControlUpdateLock) {
+                return;
+            }
+
+            const input = document.getElementById('sellOrderQuantity');
+            const slider = document.getElementById('sellQuantitySlider');
+            if (!input || !slider) {
+                return;
+            }
+
+            sellControlUpdateLock = true;
+
+            let quantity = parseInt(input.value, 10);
+            if (!Number.isInteger(quantity) || quantity < 0) {
+                quantity = 0;
+            }
+
+            const stockAvailable = getStockAvailable();
+            if (stockAvailable > 0) {
+                quantity = clamp(quantity, 0, Math.floor(stockAvailable));
+            } else {
+                quantity = 0;
+            }
+
+            input.value = quantity > 0 ? quantity : '';
+
+            const ratio = computeSellRatioFromQuantity(quantity);
+            slider.value = Math.round(ratio * 100);
+            lastSellRatio = ratio;
+            lastSellQuantitySource = 'input';
+
+            sellControlUpdateLock = false;
+        }
+
+        function refreshBuyControlsForCurrentState() {
+            const input = document.getElementById('buyOrderQuantity');
+            const slider = document.getElementById('buyQuantitySlider');
+            if (!input || !slider) {
+                return;
+            }
+
+            buyControlUpdateLock = true;
+
+            const price = getEffectiveLimitPrice();
+            const cashAvailable = getCashAvailable();
+            const maxQuantity = (Number.isFinite(price) && price > 0 && cashAvailable > 0)
+                ? Math.floor(cashAvailable / price)
+                : 0;
+
+            if (lastBuyQuantitySource === 'slider') {
+                const ratio = clampRatio(lastBuyRatio);
+                const quantity = computeBuyQuantityFromRatio(ratio, price);
+                const safeQuantity = maxQuantity > 0 ? clamp(quantity, 0, maxQuantity) : 0;
+                input.value = safeQuantity > 0 ? safeQuantity : '';
+                slider.value = Math.round(ratio * 100);
+            } else {
+                let quantity = parseInt(input.value, 10);
+                if (!Number.isInteger(quantity) || quantity < 0) {
+                    quantity = 0;
+                }
+                const safeQuantity = maxQuantity > 0 ? clamp(quantity, 0, maxQuantity) : 0;
+                input.value = safeQuantity > 0 ? safeQuantity : '';
+                const ratio = computeBuyRatioFromQuantity(safeQuantity, price);
+                lastBuyRatio = ratio;
+                slider.value = Math.round(ratio * 100);
+            }
+
+            buyControlUpdateLock = false;
+        }
+
+        function refreshSellControlsForCurrentState() {
+            const input = document.getElementById('sellOrderQuantity');
+            const slider = document.getElementById('sellQuantitySlider');
+            if (!input || !slider) {
+                return;
+            }
+
+            sellControlUpdateLock = true;
+
+            const stockAvailable = getStockAvailable();
+            const maxQuantity = stockAvailable > 0 ? Math.floor(stockAvailable) : 0;
+
+            if (lastSellQuantitySource === 'slider') {
+                const ratio = clampRatio(lastSellRatio);
+                const quantity = computeSellQuantityFromRatio(ratio);
+                const safeQuantity = maxQuantity > 0 ? clamp(quantity, 0, maxQuantity) : 0;
+                input.value = safeQuantity > 0 ? safeQuantity : '';
+                slider.value = Math.round(ratio * 100);
+            } else {
+                let quantity = parseInt(input.value, 10);
+                if (!Number.isInteger(quantity) || quantity < 0) {
+                    quantity = 0;
+                }
+                const safeQuantity = maxQuantity > 0 ? clamp(quantity, 0, maxQuantity) : 0;
+                input.value = safeQuantity > 0 ? safeQuantity : '';
+                const ratio = computeSellRatioFromQuantity(safeQuantity);
+                lastSellRatio = ratio;
+                slider.value = Math.round(ratio * 100);
+            }
+
+            sellControlUpdateLock = false;
+        }
+
+        function refreshQuantityControlsAfterPortfolioChange() {
+            refreshBuyControlsForCurrentState();
+            refreshSellControlsForCurrentState();
+        }
+
+        function handlePriceReferenceChanged() {
+            refreshBuyControlsForCurrentState();
+        }
+
+        function setupOrderQuantityControls() {
+            const buySlider = document.getElementById('buyQuantitySlider');
+            if (buySlider) {
+                buySlider.addEventListener('input', handleBuySliderInput);
+            }
+
+            const buyInput = document.getElementById('buyOrderQuantity');
+            if (buyInput) {
+                buyInput.addEventListener('click', handleBuyQuantityInputChange);
+                buyInput.addEventListener('input', handleBuyQuantityInputChange);
+            }
+
+            const sellSlider = document.getElementById('sellQuantitySlider');
+            if (sellSlider) {
+                sellSlider.addEventListener('input', handleSellSliderInput);
+            }
+
+            const sellInput = document.getElementById('sellOrderQuantity');
+            if (sellInput) {
+                sellInput.addEventListener('click', handleSellQuantityInputChange);
+                sellInput.addEventListener('input', handleSellQuantityInputChange);
+            }
+
+            handleBuyQuantityInputChange();
+            handleSellQuantityInputChange();
+        }
+
+        function updatePortfolioDisplay(portfolio) {
+            const infoEl = document.getElementById('userPortfolioInfo');
+            if (!infoEl) return;
+            if (!portfolio) {
+                latestPortfolio = null;
+                infoEl.textContent = '全部资金：-- 可用：-- ｜ 全部股票：-- 可用：-- | 总资产：--';
+                refreshQuantityControlsAfterPortfolioChange();
+                return;
+            }
+
+            latestPortfolio = portfolio;
+
+            const cash_total = Number.isFinite(Number(portfolio.cash_total)) ? Number(portfolio.cash_total).toFixed(2) : 0;
+            const cash_available = Number.isFinite(Number(portfolio.cash_available)) ? Number(portfolio.cash_available).toFixed(2) : 0;
+            const stock_total = Number.isFinite(Number(portfolio.stock_total)) ? Number(portfolio.stock_total) : 0;
+            const stock_available = Number.isFinite(Number(portfolio.stock_available)) ? Number(portfolio.stock_available) : 0;
+            const portfolio_value = Number(Number(cash_total) + Number(stock_total) * Number(latestMidPrice || 0)).toFixed(2);
+            infoEl.textContent = `全部资金：${cash_total} 可用：${cash_available} ｜ 全部股票：${stock_total} 可用：${stock_available} | 总资产：${portfolio_value}`;
+            refreshQuantityControlsAfterPortfolioChange();
+        }
+
+        function renderOpenOrders() {
+            const tbody = document.getElementById('openOrdersBody');
+            if (!tbody) return;
+            const orders = userOrdersState.open || [];
+            if (!orders.length) {
+                tbody.innerHTML = '<tr><td colspan="11" class="user-orders-empty">暂无委托</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => {
+                const direction = order.direction || (order.quantity < 0 ? 'sell' : 'buy');
+                const directionLabel = direction === 'sell' ? '卖出' : '买入';
+                const tif = order.time_in_force || order.tif || 'GTC';
+                const status = order.status || 'open';
+                const orderId = order.order_id || '';
+                const renderOrderId = orderId.length > 8 ? orderId.slice(0, 8) : orderId;
+                const originalQty = order.original_quantity !== undefined ? order.original_quantity : Math.abs(order.quantity || 0);
+                const remaining = order.remaining !== undefined ? order.remaining : Math.max(0, originalQty - (order.filled_quantity || 0));
+                const filled = order.filled_quantity !== undefined ? order.filled_quantity : Math.max(0, originalQty - remaining);
+                const createdTick = (order.created_tick !== undefined && order.created_tick !== null) ? order.created_tick : '--';
+                const canCancel = status === 'open' && orderId;
+                const price = formatPrice(order.price);
+                const rawExpiryTicks = Number(order.expiry_tick);
+                let displayValidTicks = '--';
+                if (rawExpiryTicks > 0 && rawExpiryTicks <= 9000) {
+                    displayValidTicks = rawExpiryTicks;
+                }
+                if (rawExpiryTicks > 9000) {
+                    displayValidTicks = 'GTC';
+                }
+                if (tif === 'IOC') {
+                    displayValidTicks = 'IOC';
+                }
+                let displayTicksRemaining = '--';
+                if (Number.isInteger(rawExpiryTicks) && rawExpiryTicks > 0 && rawExpiryTicks <= 9000 && userOrdersState.current_tick !== null && Number.isInteger(userOrdersState.current_tick)) {
+                    const expiryTick = (order.expiry_tick !== undefined && order.expiry_tick !== null && order.expiry_tick !== '') ? order.expiry_tick : null;
+                    if (expiryTick !== null && Number.isInteger(expiryTick)) {
+                        const ticksLeft = expiryTick - userOrdersState.current_tick;
+                        displayTicksRemaining = ticksLeft >= 0 ? ticksLeft : '0';
+                    }
+                }
+                return `<tr>
+                    <td>${renderOrderId || '--'}</td>
+                    <td class="${direction === 'sell' ? 'sell-order' : 'buy-order'}">${directionLabel}</td>
+                    <td>$${price}</td>
+                    <td>${remaining}</td>
+                    <td>${filled}</td>
+                    <td>${displayValidTicks}</td>
+                    <td>${displayTicksRemaining}</td>
+                    <td>${status}</td>
+                    <td>${createdTick}</td>
+                    <td>${canCancel ? `<button type="button" onmousedown="cancelUserOrder('${orderId}')">撤单</button>` : ''}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderAllOrders() {
+            const tbody = document.getElementById('allOrdersBody');
+            if (!tbody) return;
+            const orders = userOrdersState.all || [];
+            if (!orders.length) {
+                tbody.innerHTML = '<tr><td colspan="10" class="user-orders-empty">暂无订单记录</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.slice().reverse().map(order => {
+                const direction = order.direction || (order.quantity < 0 ? 'sell' : 'buy');
+                const directionLabel = direction === 'sell' ? '卖出' : '买入';
+                const tif = order.time_in_force || order.tif || 'GTC';
+                const status = order.status || 'open';
+                const orderId = order.order_id || '--';
+                const originalQty = order.original_quantity !== undefined ? order.original_quantity : Math.abs(order.quantity || 0);
+                const filled = order.filled_quantity !== undefined ? order.filled_quantity : ((originalQty !== undefined ? originalQty : 0) - (order.remaining || 0));
+                const createdTick = (order.created_tick !== undefined && order.created_tick !== null) ? order.created_tick : '--';
+                const price = formatPrice(order.price);
+                const rawExpiryTicks = Number(order.expiry_tick);
+                let displayExpiryTicks = '--';
+                if (rawExpiryTicks > 0 && rawExpiryTicks <= 9000) {
+                    displayExpiryTicks = rawExpiryTicks;
+                }
+                const expiryTick = (order.expiry_tick !== undefined && order.expiry_tick !== null && order.expiry_tick !== '') ? order.expiry_tick : '--';
+                return `<tr>
+                    <td>${orderId}</td>
+                    <td class="${direction === 'sell' ? 'sell-order' : 'buy-order'}">${directionLabel}</td>
+                    <td>$${price}</td>
+                    <td>${originalQty !== undefined ? originalQty : '--'}</td>
+                    <td>${filled !== undefined ? filled : '--'}</td>
+                    <td>${tif}</td>
+                    <td>${displayExpiryTicks}</td>
+                    <td>${status}</td>
+                    <td>${createdTick}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function updateUserOrdersFromTick(orders) {
+            userOrdersState.open = orders.open_orders || [];
+            userOrdersState.all = orders.all_orders || [];
+            userOrdersState.current_tick = (orders.current_tick !== undefined && orders.current_tick !== null)
+                ? orders.current_tick
+                : userOrdersState.current_tick;
+            renderOpenOrders();
+            renderAllOrders();
+            updatePortfolioDisplay(orders.portfolio);
+        }
+
+        async function placeUserOrder(direction) {
+            let quantityInput;
+            if (direction == 'buy') {
+                quantityInput = document.getElementById('buyOrderQuantity');
+            } else {
+                quantityInput = document.getElementById('sellOrderQuantity');
+            }
+            const priceInput = document.getElementById('limitPriceInput');
+            if (!quantityInput) {
+                showUserOrderMessage('error', '找不到数量输入框');
+                return;
+            }
+
+            const quantity = parseInt(quantityInput.value, 10);
+            if (!Number.isInteger(quantity) || quantity <= 0) {
+                showUserOrderMessage('error', '请输入有效的数量');
+                return;
+            }
+
+            let price = null;
+            if (selectedPricePreset !== null) {
+                if (latestMidPrice === null || !Number.isFinite(latestMidPrice) || latestMidPrice <= 0) {
+                    showUserOrderMessage('error', '当前无法获取中间价');
+                    return;
+                }
+                price = latestMidPrice * (1 + selectedPricePreset);
+            } else {
+                if (!priceInput) {
+                    showUserOrderMessage('error', '找不到限价输入框');
+                    return;
+                }
+                const manualPrice = parseFloat(priceInput.value);
+                if (!Number.isFinite(manualPrice) || manualPrice <= 0) {
+                    showUserOrderMessage('error', '请输入有效的限价');
+                    return;
+                }
+                price = manualPrice;
+            }
+
+            const validTicksInput = document.getElementById('orderValidTicks');
+            const tifSelection = (selectedTimeInForce || 'GTC').toUpperCase();
+            let immediateCancel = false;
+            let timeInForceValue = 9001;
+
+            if (tifSelection === 'IOC') {
+                immediateCancel = true;
+                timeInForceValue = 1;
+            } else if (tifSelection === 'CUSTOM') {
+                const customTicks = validTicksInput ? parseInt(validTicksInput.value, 10) : NaN;
+                if (!Number.isInteger(customTicks) || customTicks <= 0) {
+                    showUserOrderMessage('error', '请输入有效的有效Tick数');
+                    return;
+                }
+                timeInForceValue = customTicks;
+            } else {
+                timeInForceValue = 9001;
+            }
+
+            const payload = {
+                direction,
+                quantity,
+                price: Number(price.toFixed(6)),
+                immediate_cancel: immediateCancel,
+                valid_ticks: timeInForceValue
+            };
+
+            try {
+                const response = await fetch('/user/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || '下单失败');
+                }
+
+                showUserOrderMessage('success', `订单已提交：${result.order?.order_id || ''}`);
+                if (priceInput && selectedPricePreset === null) {
+                    priceInput.value = '';
+                }
+            } catch (error) {
+                console.error('下单失败:', error);
+                showUserOrderMessage('error', error.message || '下单失败');
+            }
+        }
+
+        async function cancelUserOrder(orderId) {
+            if (!orderId || orderId === '--') {
+                return;
+            }
+            try {
+                const response = await fetch(`/user/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || '撤单失败');
+                }
+                showUserOrderMessage('success', `已撤销订单：${orderId}`);
+            } catch (error) {
+                console.error('撤单失败:', error);
+                showUserOrderMessage('error', error.message || '撤单失败');
+            }
+        }
+
+        function setupUserTradingUI() {
+            presetButtons = Array.from(document.querySelectorAll('#pricePresetButtons .preset-btn'));
+            const manualButton = presetButtons.length > 0 ? presetButtons[0] : null;
+            if (manualButton) {
+                selectPricePreset(null, manualButton);
+            }
+
+            const priceInput = document.getElementById('limitPriceInput');
+            if (priceInput && manualButton) {
+                priceInput.addEventListener('input', () => {
+                    selectPricePreset(null, manualButton);
+                });
+            }
+
+            tifButtons = Array.from(document.querySelectorAll('#tifButtons .preset-btn'));
+            const defaultTifButton = tifButtons.find(btn => (btn.dataset.tif || '').toUpperCase() === selectedTimeInForce) || tifButtons[0];
+            if (defaultTifButton) {
+                selectTimeInForce((defaultTifButton.dataset.tif || 'GTC').toUpperCase(), defaultTifButton);
+            } else {
+                selectTimeInForce('GTC');
+            }
+        }
+
+        function setActiveUpdateSpeed(value) {
+            if (value === undefined || value === null) {
+                return;
+            }
+
+            if (!updateSpeedButtons || updateSpeedButtons.length === 0) {
+                updateSpeedButtons = Array.from(document.querySelectorAll('.update-speed-buttons .tick-btn'));
+            }
+
+            if (!updateSpeedButtons.length) {
+                return;
+            }
+
+            const normalizedValue = value.toString();
+            const hasMatch = updateSpeedButtons.some(btn => (btn.dataset.speed || '') === normalizedValue);
+            if (!hasMatch) {
+                return;
+            }
+
+            selectedTickDuration = normalizedValue;
+
+            updateSpeedButtons.forEach(btn => {
+                const isMatch = (btn.dataset.speed || '') === selectedTickDuration;
+                btn.classList.toggle('active', isMatch);
+            });
+        }
+
+        function setupUpdateSpeedButtons() {
+            updateSpeedButtons = Array.from(document.querySelectorAll('.update-speed-buttons .tick-btn'));
+            if (!updateSpeedButtons.length) {
+                return;
+            }
+
+            const activeButton = updateSpeedButtons.find(btn => btn.classList.contains('active'));
+            if (activeButton) {
+                selectedTickDuration = activeButton.dataset.speed || selectedTickDuration;
+            } else {
+                const firstButton = updateSpeedButtons[0];
+                selectedTickDuration = firstButton.dataset.speed || selectedTickDuration;
+                setActiveUpdateSpeed(selectedTickDuration);
+            }
+        }
+
+        window.placeUserOrder = placeUserOrder;
+        window.cancelUserOrder = cancelUserOrder;
+        window.selectPricePreset = selectPricePreset;
+        window.selectTimeInForce = selectTimeInForce;
+
+        // WebSocket连接
+        async function connectWebSocket() {
+            const serverUrl = "/ws";
+
+            try {
+                ws = new WebSocket(serverUrl);
+
+                ws.onopen = function (event) {
+                    console.log('WebSocket连接已建立');
+                    document.getElementById('connectionStatus').textContent = '已连接';
+                    document.getElementById('connectionStatus').className = 'status-value connection-status connected';
+                };
+
+                ws.onmessage = function (event) {
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        if (data.type === 'historical_prices') {
+                            // 接收历史价格数据
+                            priceHistory = data.price_history || [];
+                            if (priceHistory.length > 0) {
+                                previousPrice = priceHistory[priceHistory.length - 1];
+                                updatePriceDisplay(previousPrice);
+                                drawChart();
+                            }
+                            console.log('收到历史价格数据，共', data.current_tick, '个tick');
+                            document.getElementById('currentTick').textContent = data.current_tick || 0;
+                            document.getElementById('closeTick').textContent = data.total_ticks || 0;
+
+                        } else if (data.type === 'tick_update') {
+                            // 接收实时tick更新
+                            priceHistory.push(data.last_price);
+                            updatePriceDisplay(data.last_price);
+                            drawChart();
+
+                            // 更新订单簿
+                            updateOrderBook(data.order_book.buy_orders, data.order_book.sell_orders);
+
+                            // 更新成交记录
+                            if (data.trades.length > 0) {
+                                const trades = data.trades.map(trade => ({
+                                    price: trade.price,
+                                    quantity: trade.quantity,
+                                    taker: trade.taker,
+                                    tick: data.tick
+                                }));
+                                updateTrades(trades);
+                            }
+
+                            // 更新状态栏
+                            updateStatus(data);
+
+                            latestMidPrice = (data.mid_price && data.mid_price > 0) ? data.mid_price : data.last_price;
+                            updateMidPriceDisplay();
+                            handlePriceReferenceChanged();
+
+                            updateUserOrdersFromTick(data.user_orders);
+                        } else if (data.type === 'status_update') {
+                            // 接收状态更新
+                            let truth_cnt = data.truth_count || 0;
+                            let truth_tot = data.total_count || 10;
+                            let speed = data.tick_duration;
+
+                            document.getElementById('truthRemain').textContent = `剩余 Truth: ${truth_tot - truth_cnt} / ${truth_tot}`;
+                            if (Number.isFinite(speed) && speed > 0) {
+                                setActiveUpdateSpeed(speed.toString());
+                            }
+                        }
+                    } catch (error) {
+                        console.error('解析消息失败:', error);
+                    }
+                };
+
+                ws.onclose = function (event) {
+                    console.log('WebSocket连接已关闭');
+                    document.getElementById('connectionStatus').textContent = '未连接';
+                    document.getElementById('connectionStatus').className = 'status-value connection-status disconnected';
+                    latestMidPrice = null;
+                    updateMidPriceDisplay();
+                    handlePriceReferenceChanged();
+                };
+
+                ws.onerror = function (error) {
+                    console.error('WebSocket错误:', error);
+                    alert('WebSocket连接失败，请检查服务器地址');
+                };
+
+            } catch (error) {
+                console.error('连接WebSocket失败:', error);
+                alert('连接失败，请检查服务器地址');
+            }
+        }
+
+        async function startSimulation() {
+            try {
+                const response = await fetch(`/simulation/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('startSimulationBtn').disabled = true;
+                } else {
+                    alert('启动交易失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('连接服务器失败: ' + error.message);
+            }
+        }
+
+        async function killSimulation() {
+            let confirmKill = confirm("确定要重开交易吗？");
+            if (!confirmKill) return;
+            try {
+                const response = await fetch(`/simulation/kill`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    document.getElementById('startSimulationBtn').disabled = true;
+                    document.getElementById('killSimulationBtn').disabled = true;
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                } else {
+                    const result = await response.json();
+                    alert('重开交易失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+                // alert('连接服务器失败: ' + error.message);
+            }
+        }
+
+        async function sendTruth(rating) {
+            try {
+                const response = await fetch(`/simulation/send-truth`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ rating: rating })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                } else {
+                    alert('发送 Truth 失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('连接服务器失败: ' + error.message);
+            }
+
+        }
+
+        async function getFlag() {
+            try {
+                const response = await fetch(`/user/getflag`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    let message = result.flag1 ? `Flag1: ${result.flag1}\n` : '';
+                    message += result.flag2 ? `Flag2: ${result.flag2}\n` : '';
+                    message += result.flag3 ? `Flag3: ${result.flag3}` : '';
+                    alert(message || '未获取到 Flag');
+                } else {
+                    alert('获取 Flag 失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('连接服务器失败: ' + error.message);
+            }
+        }
+
+        async function updateSpeed(value) {
+            const numericValue = parseFloat(value);
+            if (!Number.isFinite(numericValue) || numericValue <= 0) {
+                return;
+            }
+
+            const previousSelection = selectedTickDuration;
+            setActiveUpdateSpeed(value);
+
+            try {
+                const response = await fetch(`/simulation/tick-duration`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ tick_duration: numericValue })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                } else {
+                    setActiveUpdateSpeed(previousSelection);
+                    alert('更新速度失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                setActiveUpdateSpeed(previousSelection);
+                alert('连接服务器失败: ' + error.message);
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.onload = function () {
+            initChart();
+            setupUserTradingUI();
+            setupOrderQuantityControls();
+            setupUpdateSpeedButtons();
+            updateMidPriceDisplay();
+
+            // 设置默认按钮状态
+            const defaultTickButton = document.querySelector('.chart-controls .tick-btn');
+            if (defaultTickButton) {
+                defaultTickButton.classList.add('active');
+            }
+
+            // 自动连接（可选）
+            connectWebSocket();
+        };
+    </script>
+</body>
+
+</html>

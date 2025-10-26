@@ -1,0 +1,29 @@
+import module java.base;
+
+public class Solution {
+  public static void solve(Object f) throws Exception {
+    System.out.println(getFlag(f));
+  }
+
+  static native String getFlag(Object f);
+
+/* compressed */
+
+  static {
+    var inflater = new Inflater();
+    inflater.setInput(compressed);
+
+    var buffer = new byte[4096];
+    final var outPath = "/libsolution.so";
+    try (var out = new FileOutputStream(outPath)) {
+      while (!inflater.finished()) {
+        int count = inflater.inflate(buffer);
+        out.write(buffer, 0, count);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    System.load(outPath);
+  }
+}

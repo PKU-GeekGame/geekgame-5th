@@ -1,0 +1,40 @@
+[
+  {
+    "id": "1",
+    "question_html": "北京大学新燕园校区的教学楼在启用时，全部教室共有多少座位（不含讲桌）？",
+    "answer_validator": "\\d+",
+    "answer": ["2822"]
+  },
+  {
+    "id": "2",
+    "question_html": "基于 SwiftUI 的 iPad App 要想让图片自然延伸到旁边的导航栏（如右图红框标出的效果），需要调用视图的什么方法？",
+    "image_url": "/static/img-pingguoxitong.webp",
+    "answer_validator": "[a-z][A-Za-z0-9_]+",
+    "answer": ["backgroundExtensionEffect"]
+  },
+  {
+    "id": "3",
+    "question_html": "右图这张照片是在飞机的哪个座位上拍摄的？",
+    "image_url": "/static/img-quanguokefei.webp",
+    "answer_validator": "\\d+[A-Z]",
+    "answer": ["11K"]
+  },
+  {
+    "id": "4",
+    "question_html": "注意到比赛平台题目页面底部的【复制个人Token】按钮了吗？本届改进了 Token 生成算法，UID 为 1234567890 的用户生成的个人 Token 相比于上届的算法会缩短多少个字符？",
+    "answer_validator": "\\d+",
+    "answer": ["11"]
+  },
+  {
+    "id": "5",
+    "question_html": "最后一个默认情况下允许安装 Manifest V1 .crx 扩展程序的 Chrome 正式版本是多少？",
+    "answer_validator": "[4-9]\\d",
+    "answer": ["66"]
+  },
+  {
+    "id": "6",
+    "question_html": "<a href=https://arxiv.org/pdf/2502.12524 target=_blank rel=noopener>此论文</a> 提到的 YOLOv12-L 目标检测模型实际包含多少个卷积算子？",
+    "answer_validator": "\\d{3}",
+    "answer": ["212"]
+  }
+]

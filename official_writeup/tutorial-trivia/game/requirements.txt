@@ -1,0 +1,4 @@
+flask
+pynacl
+pytz
+uwsgi

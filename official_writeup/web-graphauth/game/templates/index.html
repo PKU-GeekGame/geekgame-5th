@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>华清大学用户电子身份服务系统</title>
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2/css/pico.min.css" crossorigin="anonymous">
+</head>
+
+<body>
+  <header style="display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; border-bottom: 1px solid;">
+    <h1 style="font-size: 1.5rem; padding: 1rem 0; margin-bottom: 0;">
+      <span>华清大学</span>
+      <span style="margin-left: 1rem; font-family: Kaiti,STKaiti,楷体,华文楷体;">用户电子身份服务系统</span>
+    </h1>
+    {% if username %}
+      <form method="post" action="/logout">
+        <button type="submit" style="margin-bottom: 0; padding: 0.3rem 0.5rem;">退出</button>
+      </form>
+    {% endif %}
+  </header>
+  <main style="display: flex; justify-content: center;">
+    <div>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <ul style="color: red">
+            {% for m in messages %}<li>{{ m }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      <div style="display: flex; justify-content: center; gap: 6rem; padding: 3rem; border: 2px solid; border-radius: 0.75rem; margin-top: 1rem; min-width: 60vw;">
+        {% if username %}
+          <section>
+            <h2 style="text-align: center;">个人信息</h2>
+            <div style="display: grid; grid-template-columns: auto auto; gap: 1rem;">
+              <strong>用户名</strong>
+              <div>{{ username }}</div>
+              {% if secret %}
+                <strong>secret</strong>
+                <div>{{ secret }}</div>
+              {% endif %}
+            </div>
+          </section>
+        {% else %}
+          <section>
+            <h2 style="text-align: center;">用户密码登录</h2>
+            <form method="post" action="/login">
+              <label>用户名<input name="username"></label>
+              <label>密码<input name="password" type="password"></label>
+              <button type="submit">登录</button>
+            </form>
+          </section>
+          <section>
+            <h2 style="text-align: center;">新生注册</h2>
+            <form method="post" action="/register">
+              <label>用户名<input name="username"></label>
+              <label>密码<input name="password" type="password"></label>
+              <button type="submit">注册</button>
+            </form>
+          </section>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</body>
+
+</html>

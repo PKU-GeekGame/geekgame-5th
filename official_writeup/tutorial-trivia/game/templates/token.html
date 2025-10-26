@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>北清问答</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+</head>
+<body>
+    <div class="container" style="max-width: 960px">
+        <br>
+        <h1>北清问答</h1>
+        <br>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card bg-light-subtle mb-3">
+            <div class="card-header">
+                开始之前请输入你的 Token
+            </div>
+            <div class="card-body">
+                <form action="?" method="post">
+                    <div class="input-group input-group">
+                        <input type="text" class="form-control" name="token" placeholder="Token">
+                        <button class="btn btn-primary" type="submit">开始</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+    
+    <script>
+        function set_theme() {
+            document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+        }
+        set_theme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', set_theme);
+    </script>
+</body>
+</html>

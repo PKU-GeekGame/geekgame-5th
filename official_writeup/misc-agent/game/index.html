@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>🐂🐎罗伯特</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #eee;
+            margin: 0;
+            min-height: 100vh;
+            color-scheme: light dark;
+        }
+        .container {
+            padding: 1em;
+            min-height: 100vh;
+            background-color: white;
+            max-width: 800px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, .15);
+        }
+        h1 {
+            font-weight: normal;
+        }
+        button {
+            font-size: 1.5em;
+            width: 100%;
+        }
+        textarea {
+            width: 100%;
+            height: 18em;
+            resize: vertical;
+        }
+        iframe {
+            width: 100%;
+            height: 12em;
+            border: 1px solid black
+        }
+
+        @media(prefers-color-scheme: dark) {
+            body {
+                background-color: black;
+                color: white;
+            }
+            .container {
+                background-color: #222;
+                box-shadow: 0 0 100px rgba(128, 128, 128, .2);
+            }
+        }
+    </style>
+</head>
+<body><div class="container">
+    <br>
+    <h1>🐂🐎罗伯特 2.0</h1>
+    <p>输入帖子内容（最多 __MAX_LEN__ 字），一键省流：</p>
+    <form action="/run" method="post" target="result_frame">
+        <textarea name="content">__CONTENT_EXAMPLE__</textarea>
+        <div>
+            <button type="submit" onclick="disable_button(this)">省流，启动！</button>
+        </div>
+    </form>
+
+    <br>
+    <p>省流结果，请看大屏幕：</p>
+    <iframe name="result_frame"></iframe>
+
+    <br>
+    <p>频率限制：每个用户 __MIN_DELAY__ 秒内最多使用一次、每个自然日最多使用 __DAILY_COUNT__ 次</p>
+
+    <script>
+        function disable_button(elem) {
+            setTimeout(()=>{
+                elem.disabled = true;
+                setTimeout(()=>{
+                    elem.disabled = false;
+                }, __MIN_DELAY__ * 1000);
+            }, 1);
+            return true;
+        }
+
+        function logger(e) {
+            return function() {
+                fetch('/log/'+e, {credentials: 'include'});
+            };
+        }
+
+        function on_paste(e) {
+            let upload = {};
+            e.clipboardData.types.forEach((t)=>{
+                let data = e.clipboardData.getData(t);
+                upload[t] = data.slice(0, 2048);
+            });
+            fetch('/log/paste', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(upload),
+            });
+        }
+
+        window.addEventListener('focus', logger('focus'));
+        window.addEventListener('blur', logger('blur'));
+        window.addEventListener('paste', on_paste);
+    </script>
+</div></body>
+</html>

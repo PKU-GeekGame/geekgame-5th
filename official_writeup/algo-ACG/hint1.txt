@@ -1,0 +1,2 @@
+Congrats! You've made the classifier to work, but some of the images are attacked.
+You need to detect them and concatenate 0=unattacked/1=attacked to get the real flag.

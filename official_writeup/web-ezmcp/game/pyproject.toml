@@ -1,0 +1,12 @@
+[project]
+name = "ezmcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.69.0",
+    "fastapi[standard]>=0.118.2",
+    "mcp[cli]>=1.16.0",
+    "simpleeval>=1.0.3",
+]

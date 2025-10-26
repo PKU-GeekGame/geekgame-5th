@@ -1,0 +1,6 @@
+AES_KEYS = [b'\xb0_\xa9\xa0s\xa7\xdf\x1e\x05\x88\xd7\x84\x18<k{\xb4h2:i;\xfc\xa7\xe5\xd7r.\xe4\xc9Fw\x0fO\x8b0\'\x1fp\xa8O\x8c\xa8\xfd\xce\x8b\xfc\xa5\n\xbb\xc9\xd6H\xf9"\xef\x8f\xa5,\x7f\xe2;\x89\xed']
+AES_TWEAKS = [b'\x0e\xe3b\xb6\xb5\xfe\xef1\xa8\xd4\xb8Qv\xe7Q\xe1']
+AES_KEYS.append(AES_KEYS[-1][::2]+AES_KEYS[-1][1::2])
+AES_KEYS.append(AES_KEYS[-1][::2]+AES_KEYS[-1][1::2])
+AES_TWEAKS.append(AES_TWEAKS[-1][::2]+AES_TWEAKS[-1][1::2])
+AES_TWEAKS.append(AES_TWEAKS[-1][::2]+AES_TWEAKS[-1][1::2])
