@@ -50,7 +50,7 @@ Rust 内核 🎶   <strong>权限提升！！！</strong>🤯</p>
 
 ### Flag 1
 
-预期解法：审计下发的 patch，从中发现[文件的所属用户可以随便修改所属用户组](https://github.com/PKU-GeekGame/geekgame-5th-archive/blob/e5aa6fba75f51b4054d0c9364e3c0bdcbdb83971/official_writeup/binary-safekernel/src/0001-GeekGame-2025.patch#L788)，也可以设置 SGID，从而想到可以通过将可执行文件的 GID 设置为 0, 再设置 SGID，执行它就可以获得 root 用户组权限，因此能读取 `/flag1.txt`。
+预期解法：审计下发的 patch，从中发现[文件的所属用户可以随便修改所属用户组](https://github.com/PKU-GeekGame/geekgame-5th/blob/master/official_writeup/binary-safekernel/src/0001-GeekGame-2025.patch#L788)，也可以设置 SGID，从而想到可以通过将可执行文件的 GID 设置为 0, 再设置 SGID，执行它就可以获得 root 用户组权限，因此能读取 `/flag1.txt`。
 
 注意 busybox 会自动丢弃其“非法”获得的权限，所以需要自己上传一个二进制可执行文件（毕竟这是 binary 题目呢）。
 
@@ -95,13 +95,13 @@ int main(void)
 
 预期解法：审计 execve 系统调用的实现，嗯？等等，为什么要审计 execve 系统调用？
  - execve 系统调用是正常用户请求高权限（获取 root 权限或其他 capability）的常规入口（比如执行 su、sudo），且题面暗示了这个星绽内核的成熟性存疑，所以如果出问题能提权的概率较大；
- - 题目下发附件 `init.sh` 中，Flag 2 的环境与 Flag 1 的环境除了 flag 文件本身权限不同之外，最大的区别就是 Flag 2 额外[设置了 busybox 的 SUID 属性](https://github.com/PKU-GeekGame/geekgame-5th-archive/blob/e5aa6fba75f51b4054d0c9364e3c0bdcbdb83971/official_writeup/binary-safekernel/game/initramfs/init.sh#L23)，那么这就意味着能通过执行 busybox 短时间获得 root 身份，如果要利用这一点，先去看的系统调用也应该是 execve。
+ - 题目下发附件 `init.sh` 中，Flag 2 的环境与 Flag 1 的环境除了 flag 文件本身权限不同之外，最大的区别就是 Flag 2 额外[设置了 busybox 的 SUID 属性](https://github.com/PKU-GeekGame/geekgame-5th/blob/master/official_writeup/binary-safekernel/game/initramfs/init.sh#L23)，那么这就意味着能通过执行 busybox 短时间获得 root 身份，如果要利用这一点，先去看的系统调用也应该是 execve。
 
 然后发现提示中的 [FIXME](https://github.com/asterinas/asterinas/blob/257b0c63b1f039e1ec4fd94c2c7bd549f8db2830/kernel/src/syscall/execve.rs#L117-L124)：“This is just wrong if the file table is shared with other processes”，共享（“shared”）听上去就不是很安全，所以如果再仔细查阅些资料的话可以发现 Linux 中支持通过 [`clone(CLONE_FILES)`](https://man7.org/linux/man-pages/man2/clone.2.html#:~:text=CLONE_FILES,unshared) 使得子进程与父进程共享文件表，但当子进程执行其他程序时，其文件表共享应该被撤销。
 
 本题内核并未实现上述行为，那么子进程可以执行一个 SUID 程序（比如 su），父进程可以篡改其文件表导致出现安全性问题。具体来说，本题 busybox 是静态链接的，su 唯一会打开的文件就是 `/etc/passwd`，那么只要将其篡改就可以控制 root 用户的密码或者新加入一个 UID=0 且没有密码的新用户，完成提权并且可以修改 `/flag2.txt` 的权限使其可读。
 
-题目环境中 QEMU 给了多核支持（[smp=2](https://github.com/PKU-GeekGame/geekgame-5th-archive/blob/e5aa6fba75f51b4054d0c9364e3c0bdcbdb83971/official_writeup/binary-safekernel/game/run.sh#L18)），所以开两个程序分别执行 su 和通过 dup 系统调用篡改 `/etc/passwd` 所对应的文件描述符即可。
+题目环境中 QEMU 给了多核支持（[smp=2](https://github.com/PKU-GeekGame/geekgame-5th/blob/master/official_writeup/binary-safekernel/game/run.sh#L18)），所以开两个程序分别执行 su 和通过 dup 系统调用篡改 `/etc/passwd` 所对应的文件描述符即可。
 
 ```bash
 #!/bin/bash
@@ -175,5 +175,5 @@ int main(int argc, char **argv)
 
 ## 优秀选手解法
 
- - Flag 1：可以 100% AI 出。
- - Flag 2：其实用 `lseek(3)` 探测 `/etc/passwd` 有没有被 su 打开更加可靠一些。
+ - Flag 1：[可以 100% AI 出。](https://github.com/PKU-GeekGame/geekgame-5th/blob/master/players_writeup/2407/README.md#%E4%BC%A0%E7%BB%9F-c-%E8%AF%AD%E8%A8%80%E6%A0%B8%E6%98%93%E5%8D%B1%E7%AC%AC%E4%B8%80%E9%97%AEai-%E8%BE%85%E5%8A%A9-100)
+ - Flag 2：其实用 `lseek(3, 0, SEEK_CUR)` 探测 `/etc/passwd` 有没有被 su 打开更加可靠一些。
